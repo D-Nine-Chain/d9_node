@@ -5,18 +5,29 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-
+use sp_staking::U128CurrencyToVote;
+use frame_support::traits::CurrencyToVote;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	create_runtime_str,
+	generic,
+	impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, Verify,
+		AccountIdLookup,
+		BlakeTwo256,
+		Block as BlockT,
+		IdentifyAccount,
+		NumberFor,
+		One,
+		Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	transaction_validity::{ TransactionSource, TransactionValidity },
+	ApplyExtrinsicResult,
+	MultiSignature,
+	key_types,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -25,25 +36,36 @@ use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	parameter_types,
 	traits::{
-		ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo,
+		ConstU128,
+		ConstU32,
+		ConstU64,
+		ConstU8,
+		KeyOwnerProofSystem,
+		Randomness,
+		StorageInfo,
 	},
 	weights::{
 		constants::{
-			BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+			BlockExecutionWeight,
+			ExtrinsicBaseWeight,
+			RocksDbWeight,
+			WEIGHT_REF_TIME_PER_SECOND,
 		},
-		IdentityFee, Weight,
+		IdentityFee,
+		Weight,
 	},
 	StorageValue,
 };
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier};
+use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplier };
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
+pub use sp_runtime::{ Perbill, Permill };
 
 /// Import the template pallet.
 // pub use pallet_template;
@@ -60,10 +82,10 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 
 /// Balance of an account.
 pub type Balance = u128;
-
 /// Index of a transaction in the chain.
 pub type Index = u32;
-
+///currency that is both lockable and Reservable
+pub type Currency = pallet_balances::Pallet<Self>;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
@@ -82,7 +104,7 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
-
+	//todo check to see if this needs to be change din the PoS situation
 	impl_opaque_keys! {
 		pub struct SessionKeys {
 			pub aura: Aura,
@@ -116,17 +138,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// up by `pallet_aura` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
-// NOTE: Currently it is not possible to change the slot duration after the chain has started.
-//       Attempting to do so will brick block production.
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
-// Time is measured by number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
-
+pub mod constants;
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
@@ -150,7 +163,7 @@ parameter_types! {
 }
 
 // Configure FRAME pallets to include in runtime.
-
+//todo need to implement session config and staking
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -206,14 +219,14 @@ impl frame_system::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
-	type MaxAuthorities = ConstU32<32>;
+	type MaxAuthorities = ConstU32<27>;
 }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 
 	type WeightInfo = ();
-	type MaxAuthorities = ConstU32<32>;
+	type MaxAuthorities = ConstU32<27>;
 	type MaxSetIdSessionEntries = ConstU64<0>;
 
 	type KeyOwnerProof = sp_core::Void;
@@ -266,7 +279,129 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 }
+impl<B> CurrencyToVote for Runtime {}
 
+impl pallet_staking::Config for Runtime {
+	type Currency = pallet_balances::Pallet<Self>;
+	type CurrencyBalance = Balance;
+	type UnixTime = pallet_timestamp::Pallet<Self>;
+	type CurrencyToVote = U128CurrencyToVote;
+	type ElectionProvider = (); //todo current define ElectionProvider
+	//fix pallet staking is incomplete, start here.
+	type RewardRemainder = ();
+	type Event = RuntimeEvent;
+	type Slash = ();
+	type Reward = ();
+	// type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
+	// /// Number of sessions per era.
+	// type SessionsPerEra: Get<SessionIndex>;
+	// /// Number of eras that staked funds must remain bonded for.
+	// type BondingDuration: Get<EraIndex>;
+	// /// Number of eras that slashes are deferred by, after computation.
+	// ///
+	// /// This should be less than the bonding duration. Set to 0 if slashes
+	// /// should be applied immediately, without opportunity for intervention.
+	// type SlashDeferDuration: Get<EraIndex>;
+	// /// The origin which can cancel a deferred slash. Root can always do this.
+	// type SlashCancelOrigin: EnsureOrigin<Self::Origin>;
+	// /// Interface for interacting with a session module.
+	// type SessionInterface: self::SessionInterface<Self::AccountId>;
+	// /// The NPoS reward curve used to define yearly inflation.
+	// /// See [Era payout](./index.html#era-payout).
+	// type RewardCurve: Get<&'static PiecewiseLinear<'static>>;
+	// /// Something that can estimate the next session change, accurately or as a best effort guess.
+	// type NextNewSession: EstimateNextNewSession<Self::BlockNumber>;
+	// /// The number of blocks before the end of the era from which election submissions are allowed.
+	// ///
+	// /// Setting this to zero will disable the offchain compute and only on-chain seq-phragmen will
+	// /// be used.
+	// ///
+	// /// This is bounded by being within the last session. Hence, setting it to a value more than the
+	// /// length of a session will be pointless.
+	// type ElectionLookahead: Get<Self::BlockNumber>;
+
+	// /// The overarching call type.
+	// type Call: Dispatchable + From<Call<Self>> + IsSubType<Call<Self>> + Clone;
+
+	// /// Maximum number of balancing iterations to run in the offchain submission.
+	// ///
+	// /// If set to 0, balance_solution will not be executed at all.
+	// type MaxIterations: Get<u32>;
+
+	// /// The threshold of improvement that should be provided for a new solution to be accepted.
+	// type MinSolutionScoreBump: Get<Perbill>;
+
+	// /// The maximum number of nominators rewarded for each validator.
+	// ///
+	// /// For each validator only the `$MaxNominatorRewardedPerValidator` biggest stakers can claim
+	// /// their reward. This used to limit the i/o cost for the nominator payout.
+	// type MaxNominatorRewardedPerValidator: Get<u32>;
+
+	// /// A configuration for base priority of unsigned transactions.
+	// ///
+	// /// This is exposed so that it can be tuned for particular runtime, when
+	// /// multiple pallets send unsigned transactions.
+	// type UnsignedPriority: Get<TransactionPriority>;
+
+	// /// Maximum weight that the unsigned transaction can have.
+	// ///
+	// /// Chose this value with care. On one hand, it should be as high as possible, so the solution
+	// /// can contain as many nominators/validators as possible. On the other hand, it should be small
+	// /// enough to fit in the block.
+	// type OffchainSolutionWeightLimit: Get<Weight>;
+
+	// /// Weight information for extrinsics in this pallet.
+	// type WeightInfo: WeightInfo;
+}
+
+impl pallet_session::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ValidatorId = Address;
+	type ValidatorIdOf = pallet_staking::StashOf<Self>; //todo determine what would be appropriate here
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+	type SessionHandler =
+		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+	type Keys = opaque::SessionKeys;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+   pub const SignedPhase = 
+}
+impl pallet_election_provider_multi_phase::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Currency;
+	type EstimateCallFee = TransactionPayment;
+	type SignedPhase = SignedPhase;
+	type UnsignedPhase = UnsignedPhase;
+	type BetterUnsignedThreshold = BetterUnsignedThreshold;
+	type BetterSignedThreshold = ();
+	type OffchainRepeat = OffchainRepeat;
+	type MinerTxPriority = MultiPhaseUnsignedPriority;
+	type MinerConfig = Self;
+	type SignedMaxSubmissions = ConstU32<10>;
+	type SignedRewardBase = SignedRewardBase;
+	type SignedDepositBase = SignedDepositBase;
+	type SignedDepositByte = SignedDepositByte;
+	type SignedMaxRefunds = ConstU32<3>;
+	type SignedDepositWeight = ();
+	type SignedMaxWeight = MinerMaxWeight;
+	type SlashHandler = (); // burn slashes
+	type RewardHandler = (); // nothing to do upon rewards
+	type DataProvider = Staking;
+	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
+	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
+	type Solver = SequentialPhragmen<AccountId, SolutionAccuracyOf<Self>, OffchainRandomBalancing>;
+	type ForceOrigin = EnsureRootOrHalfCouncil;
+	type MaxElectableTargets = MaxElectableTargets;
+	type MaxWinners = MaxActiveValidators;
+	type MaxElectingVoters = MaxElectingVoters;
+	type BenchmarkingConfig = ElectionProviderBenchmarkConfig;
+	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
+}
+//todo also impolement the pub struct OnChainSeqPhragmen
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -282,6 +417,9 @@ construct_runtime!(
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
+      Session: pallet_session,
+      Staking:pallet_staking,
+      ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );
 
@@ -304,8 +442,12 @@ pub type SignedExtra = (
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<
+	Address,
+	RuntimeCall,
+	Signature,
+	SignedExtra
+>;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
@@ -314,7 +456,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPalletsWithSystem,
+	AllPalletsWithSystem
 >;
 
 #[cfg(feature = "runtime-benchmarks")]

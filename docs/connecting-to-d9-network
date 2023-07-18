@@ -1,0 +1,7 @@
+# connecting to d9 network
+
+- read the [README](../README.md) to get setup
+
+- for rust setup details check [here](./rust-setup.md)
+
+- #todo add details on setting up the local network chain and testing it. e.g not the dev one the other one.

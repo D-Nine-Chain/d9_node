@@ -2,14 +2,17 @@
 
 a node permits one to to connect to the D9 network.
 
+to learn how to do staking click [here](./docs/staking.md)
+
 the D9 network is built using [substrate](https://substrate.io).
-<br />
-<br />
-<br />
+
+<br>
+<br>
+<br>
 
 ## Getting Started
 
-<br />
+<br>
 
 ### Prepare rust
 

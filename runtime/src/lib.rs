@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_staking::U128CurrencyToVote;
-use frame_support::traits::CurrencyToVote;
+use frame_support::traits::{ CurrencyToVote, LockIdentifier };
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -85,7 +85,7 @@ pub type Balance = u128;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 ///currency that is both lockable and Reservable
-pub type Currency = pallet_balances::Pallet<Self>;
+pub type D9NativeCurrency = pallet_balances::Pallet<Self>;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
@@ -104,7 +104,7 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
-	//todo check to see if this needs to be change din the PoS situation
+	//todo[epic=staking] check to see if this needs to be change din the PoS situation
 	impl_opaque_keys! {
 		pub struct SessionKeys {
 			pub aura: Aura,
@@ -163,7 +163,7 @@ parameter_types! {
 }
 
 // Configure FRAME pallets to include in runtime.
-//todo need to implement session config and staking
+//todo[epic=staking] i need to implement session config and staking
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -286,7 +286,7 @@ impl pallet_staking::Config for Runtime {
 	type CurrencyBalance = Balance;
 	type UnixTime = pallet_timestamp::Pallet<Self>;
 	type CurrencyToVote = U128CurrencyToVote;
-	type ElectionProvider = (); //todo current define ElectionProvider
+	type ElectionProvider = (); //todo[epic=staking] define ElectionProvidercurrent
 	//fix pallet staking is incomplete, start here.
 	type RewardRemainder = ();
 	type Event = RuntimeEvent;
@@ -357,7 +357,7 @@ impl pallet_staking::Config for Runtime {
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = Address;
-	type ValidatorIdOf = pallet_staking::StashOf<Self>; //todo determine what would be appropriate here
+	type ValidatorIdOf = pallet_staking::StashOf<Self>; //todo[epic=staking,seq=290] ValidatorIdOf check
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
@@ -368,40 +368,16 @@ impl pallet_session::Config for Runtime {
 }
 
 parameter_types! {
-   pub const SignedPhase = 
+	pub const ElectionPalletId: LockIdentifier = PalletId(*b"mypallet");
 }
-impl pallet_election_provider_multi_phase::Config for Runtime {
+
+impl pallet_elections_phragmen::Config for Runtim {
 	type RuntimeEvent = RuntimeEvent;
-	type Currency = Currency;
-	type EstimateCallFee = TransactionPayment;
-	type SignedPhase = SignedPhase;
-	type UnsignedPhase = UnsignedPhase;
-	type BetterUnsignedThreshold = BetterUnsignedThreshold;
-	type BetterSignedThreshold = ();
-	type OffchainRepeat = OffchainRepeat;
-	type MinerTxPriority = MultiPhaseUnsignedPriority;
-	type MinerConfig = Self;
-	type SignedMaxSubmissions = ConstU32<10>;
-	type SignedRewardBase = SignedRewardBase;
-	type SignedDepositBase = SignedDepositBase;
-	type SignedDepositByte = SignedDepositByte;
-	type SignedMaxRefunds = ConstU32<3>;
-	type SignedDepositWeight = ();
-	type SignedMaxWeight = MinerMaxWeight;
-	type SlashHandler = (); // burn slashes
-	type RewardHandler = (); // nothing to do upon rewards
-	type DataProvider = Staking;
-	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type Solver = SequentialPhragmen<AccountId, SolutionAccuracyOf<Self>, OffchainRandomBalancing>;
-	type ForceOrigin = EnsureRootOrHalfCouncil;
-	type MaxElectableTargets = MaxElectableTargets;
-	type MaxWinners = MaxActiveValidators;
-	type MaxElectingVoters = MaxElectingVoters;
-	type BenchmarkingConfig = ElectionProviderBenchmarkConfig;
-	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
+	type PalletId = ElectionPalletId;
+	type Currency = D9NativeCurrency;
 }
-//todo also impolement the pub struct OnChainSeqPhragmen
+
+//todo[epic=staking,seq=292] OnChainSeqPhragmen implementation
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -419,7 +395,8 @@ construct_runtime!(
 		Sudo: pallet_sudo,
       Session: pallet_session,
       Staking:pallet_staking,
-      ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
+      PhragmenElections: pallet_elections_phragmen,
+      // ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );
 
@@ -585,7 +562,7 @@ impl_runtime_apis! {
 			_set_id: sp_consensus_grandpa::SetId,
 			_authority_id: GrandpaId,
 		) -> Option<sp_consensus_grandpa::OpaqueKeyOwnershipProof> {
-			// NOTE: this is the only implementation possible since we've
+			// SUBSTRATE_NOTE: this is the only implementation possible since we've
 			// defined our key owner proof type as a bottom type (i.e. a type
 			// with no values).
 			None
@@ -686,7 +663,7 @@ impl_runtime_apis! {
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
-			// NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
+			// SUBSTRATE_NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
 			// have a backtrace here. If any of the pre/post migration checks fail, we shall stop
 			// right here and right now.
 			let weight = Executive::try_runtime_upgrade(checks).unwrap();
@@ -699,7 +676,7 @@ impl_runtime_apis! {
 			signature_check: bool,
 			select: frame_try_runtime::TryStateSelect
 		) -> Weight {
-			// NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
+			// SUBSTRATE_NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
 			// have a backtrace here.
 			Executive::try_execute_block(block, state_root_check, signature_check, select).expect("execute-block failed")
 		}

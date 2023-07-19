@@ -279,7 +279,9 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 }
-
+parameter_types! {
+	pub const SessionsPerEra: sp_staking::SessionIndex = SESSIONS_PER_ERA;
+}
 impl pallet_staking::Config for Runtime {
 	type Currency = Balances;
 	type CurrencyBalance = Balance;
@@ -288,20 +290,25 @@ impl pallet_staking::Config for Runtime {
 	type ElectionProvider = PhragmenElections;
 	type RewardRemainder = (); //todo[epic=staking,seq=291] define start here to finish pallet_staking
 	type Event = RuntimeEvent;
-	type Slash = ();
-	type Reward = ();
-}
+	type Slash = Treasury; //todo[epic=staking] this may need to change
+	type Reward = (); //todo[epic=staking,seq=292] perhaps implement OnUnbalanced Trait somewhere
+	type SessionsPerEra = SessionsPerEra;
+} //todo[epic=staking,seq=293] reseaerch Treasury. review it's code more.
 
+parameter_types! {
+	pub const Period: BlockNumber = SESSION_PERIOD;
+	pub const Offset: BlockNumber = SESSION_OFFSET;
+}
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = Address;
-	type ValidatorIdOf = pallet_staking::StashOf<Self>; //todo[epic=staking,seq=290] ValidatorIdOf check
+	type ValidatorIdOf = pallet_staking::StashOf<Self>;
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = opaque::SessionKeys;
+	type Keys = opaque::SessionKeys; //todo opaque::SessionKeys review for this
 	type WeightInfo = ();
 }
 
@@ -317,7 +324,7 @@ parameter_types! {
 impl pallet_elections_phragmen::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
 	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
-	type Currency = D9NativeCurrency; // The currency used for transactions within this pallet (like candidacy bonds).
+	type Currency = Balances; // The currency used for transactions within this pallet (like candidacy bonds).
 	type ChangeMembers = Collective; // The type which should be informed of changes to the set of elected members.
 	type InitializeMembers = Collective; // The type that sets the initial membership set, usually implemented by the session manager.
 	type CurrencyToVote = U128CurrencyToVote; // Used for converting balances to a vote weight for nuanced voting algorithms.
@@ -329,6 +336,13 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type TermDuration = TermDuration; // Defines how long each round (or "term") should last.
 	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
+}
+
+impl pallet_treasury::Config for Runtime {
+	type Currency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
+	type RejectOrigin = frame_system::EnsureRoot<AccountId>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -350,6 +364,7 @@ construct_runtime!(
       Staking:pallet_staking,
       PhragmenElections: pallet_elections_phragmen,
       Collective, pallet_collective,
+      Treasury: pallet_treasury,
       // ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );

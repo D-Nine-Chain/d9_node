@@ -36,4 +36,7 @@ const STAKING_ID: LockIdentifier = *b"staking ";
 const ELECTION_LOCK: LockIdentifier = *b"election";
 const DESIRED_MEMBERS: u32 = 27;
 const DESIRED_RUNNERS_UP: u32 = 100;
+const SESSION_PERIOD: BlockNumber = 1 * DAY;
+const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
+const SESSIONS_PER_ERA: SessionIndex = 1;
 const MAX_CANDIDATES: u32 = 200;

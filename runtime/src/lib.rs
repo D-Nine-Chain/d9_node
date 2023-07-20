@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
+use pallet_d9_treasury;
 use sp_staking::U128CurrencyToVote;
 use frame_support::traits::{ CurrencyToVote, LockIdentifier };
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -67,7 +68,6 @@ use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplie
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{ Perbill, Permill };
-
 /// Import the template pallet.
 // pub use pallet_template;
 
@@ -288,10 +288,10 @@ impl pallet_staking::Config for Runtime {
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
 	type ElectionProvider = PhragmenElections;
-	type RewardRemainder = (); //todo[epic=staking,seq=291] define start here to finish pallet_staking
+	type RewardRemainder = (); //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
 	type Event = RuntimeEvent;
-	type Slash = Treasury; //todo[epic=staking] this may need to change
-	type Reward = (); //todo[epic=staking,seq=292] perhaps implement OnUnbalanced Trait somewhere
+	type Slash = Treasury; //todo[epic=staking] change Slash OnUnblaance to D9_Treasury
+	type Reward = (); //todo[epic=staking,seq=292]  implement OnUnbalanced Trait somewhere
 	type SessionsPerEra = SessionsPerEra;
 } //todo[epic=staking,seq=293] reseaerch Treasury. review it's code more.
 
@@ -337,11 +337,13 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
 }
-
+impl pallet_d9_treasury::Config for Runtime {
+	type Event = RuntimeEvent;
+}
 impl pallet_treasury::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
+	type ApproveOrigin = frame_system::EnsureRoot<AccountId>; //todo[epic=staking] EnsureOrigin implementation for Treasury
 	type RejectOrigin = frame_system::EnsureRoot<AccountId>;
 }
 
@@ -365,6 +367,7 @@ construct_runtime!(
       PhragmenElections: pallet_elections_phragmen,
       Collective, pallet_collective,
       Treasury: pallet_treasury,
+      D9_Treasury: pallet_d9_treasury,//todo[epic=treasury,seq=345] convert all Treasury to D9 Treasury
       // ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );

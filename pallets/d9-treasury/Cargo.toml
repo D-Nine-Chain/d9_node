@@ -1,0 +1,22 @@
+[package]
+name = "d9-treasury"
+version = "1.0.0"
+authors = ["d9 tech team"]
+edition = "2021"
+#todo go over the dependencies for the toml file
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.101", optional = true }
+sp-std = { version = "2.0.0", default-features = false }
+frame-support = { version = "2.0.0", default-features = false }
+frame-system = { version = "2.0.0", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "sp-std/std",
+    "frame-support/std",
+    "frame-system/std",
+]

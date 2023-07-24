@@ -11,7 +11,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{ pallet_prelude::{ *, OptionQuery } };
+	use frame_support::{ pallet_prelude::{ *, OptionQuery }, traits::EnsureOrigin };
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -21,6 +21,7 @@ pub mod pallet {
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		type RuntimeEvent: From<Event<Self, I>> +
 			IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type EnsureTreasurer: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 	}
 
 	/// Number of proposals that have been made.
@@ -88,5 +89,25 @@ pub mod pallet {
 		}
 	}
 
-	//todo implement EnsureOrigin for this
+	pub struct EnsureTreasurer<T: Config<I>, I: 'static>(sp_std::marker::PhantomData<(T, I)>);
+
+	impl<T: Config<I>, I> EnsureOrigin<T::RuntimeOrigin> for EnsureTreasurer<T, I> {
+		type Success = T::AccountId;
+
+		fn try_origin(o: OriginFor<T>) -> Result<Self::Success, OriginFor<T>> {
+			let caller = match ensure_signed(o.clone()) {
+				Ok(caller) => caller,
+				Err(_) => {
+					return Err(o.clone());
+				}
+			};
+			let current_treasurer = Treasurer::<T, I>::get().unwrap();
+
+			if let Some(current_treasurer) = current_treasurer {
+				if caller == current_treasurer { Ok(caller) } else { Err(o) }
+			} else {
+				Err(o)
+			}
+		}
+	}
 }

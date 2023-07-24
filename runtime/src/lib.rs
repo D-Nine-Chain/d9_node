@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
+use frame_system::WeightInfo;
 use pallet_d9_treasury;
 use sp_staking::U128CurrencyToVote;
 use frame_support::traits::{ CurrencyToVote, LockIdentifier };
@@ -290,7 +291,7 @@ impl pallet_staking::Config for Runtime {
 	type ElectionProvider = PhragmenElections;
 	type RewardRemainder = (); //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
 	type Event = RuntimeEvent;
-	type Slash = Treasury; //todo[epic=staking] change Slash OnUnblaance to D9_Treasury
+	type Slash = D9Treasury; //todo[epic=staking] change Slash OnUnblaance to D9Treasury
 	type Reward = (); //todo[epic=staking,seq=292]  implement OnUnbalanced Trait somewhere
 	type SessionsPerEra = SessionsPerEra;
 } //todo[epic=staking,seq=293] reseaerch Treasury. review it's code more.
@@ -313,7 +314,7 @@ impl pallet_session::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ElectionPalletId: LockIdentifier = PalletId(*b"mypallet");
+	pub const ElectionPalletId: LockIdentifier = PalletId(*b"election_pallet");
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
@@ -337,14 +338,35 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
 }
-impl pallet_d9_treasury::Config for Runtime {
-	type Event = RuntimeEvent;
+impl pallet_d9_treasurer::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type EnsureTreasurer = EnsureTreasurer;
 }
+parameters_types! {
+	pub const ProposalBond = 100_000:Permill;
+   pub const PrposalBondMinimum = ONE_THOUSAND_D9_TOKENS:Balance;
+   pub const TreasuryPalletId = PalletId(*b"d9/treas");
+   pub const Burn = 0:Permill;
+   pub const SpendPeriod = 1:BlockNumber;
+}
+//todo[epic=WeightInfo] manage the weightinfo, research and implement properly all that shit for the runtime pallets
 impl pallet_treasury::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type ApproveOrigin = frame_system::EnsureRoot<AccountId>; //todo[epic=staking] EnsureOrigin implementation for Treasury
-	type RejectOrigin = frame_system::EnsureRoot<AccountId>;
+	type ApproveOrigin = D9Treasurer;
+	type RejectOrigin = D9Treasurer;
+	type OnSlash = Treasury;
+	type ProposalBond = ProposalBond;
+	type PrposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ();
+	type PalletId = TreasuryPalletId;
+	type Burn = Burn;
+	type SpendPeriod = SpendPeriod;
+	type BurnDestination = ();
+	type WeightInfo = WeightInfo;
+	type SpendFunds = ();
+	type MaxApprovals = ();
+	type SpendOrigin = D9Treasurer;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -367,7 +389,7 @@ construct_runtime!(
       PhragmenElections: pallet_elections_phragmen,
       Collective, pallet_collective,
       Treasury: pallet_treasury,
-      D9_Treasury: pallet_d9_treasury,//todo[epic=treasury,seq=345] convert all Treasury to D9 Treasury
+      D9Treasurer: pallet_d9_treasurer,
       // ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );

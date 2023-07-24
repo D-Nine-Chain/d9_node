@@ -2,10 +2,10 @@
 
 // #[cfg(test)]
 // mod tests;
-pub mod weights;
+// pub mod weights;
 
 use pallet_treasury::Config as TreasuryConfig;
-pub use weights::WeightInfo;
+// pub use weights::WeightInfo;
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -67,27 +67,26 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
 		OnlyTreasurerCanDoThis,
+		NoTreasurerSet,
 	}
-
-	// #[derive(Default)]
-	// struct SpendContext<Balance> {
-	// 	spend_in_context: BTreeMap<Balance, Balance>,
-	// }
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		// 	#[pallet::call_index(0)]
-		// 	#[pallet::weight(T::WeightInfo::change_treasurer())]
-		// 	pub fn new_treasurer(
-		// 		origin: OriginFor<T>,
-		// 		#[pallet::compact] new_treasurer: T::AccountId
-		// 	) -> DispatchResult {
-		// 		let current_treasurer = ensure_signed(origin)?;
-
-		// 		ensure!(current_treasurer == Self::treasurer(), Error::<T, I>::OnlyTreasurerCanDoThis);
-
-		// 		Self::deposit_event(Event::NewTreasurer(new_treasurer));
-		// 		Ok(())
-		// 	}
+		#[pallet::call_index(0)]
+		#[pallet::weight(
+			T::DbWeight::get().reads_writes(1, 1) + // Reading current treasurer and writing new treasurer
+				(10_000_u64).into() // Some arbitrary computation weight
+		)]
+		pub fn new_treasurer(origin: OriginFor<T>, new_treasurer: T::AccountId) -> DispatchResult {
+			let caller = ensure_signed(origin)?;
+			let current_treasurer = Self::treasurer()
+				.ok_or(Error::<T, I>::NoTreasurerSet)?
+				.unwrap();
+			ensure!(caller == current_treasurer, Error::<T, I>::OnlyTreasurerCanDoThis);
+			Self::deposit_event(Event::NewTreasurer(new_treasurer));
+			Ok(())
+		}
 	}
+
+	//todo implement EnsureOrigin for this
 }

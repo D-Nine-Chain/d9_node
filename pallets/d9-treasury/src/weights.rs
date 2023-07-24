@@ -8,7 +8,7 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_treasury.
 pub trait WeightInfo {
-	fn change_treasurer() -> Weight;
+	fn new_treasurer() -> Weight;
 }
 
 /// Weights for pallet_treasury using the Substrate node and recommended hardware.
@@ -20,7 +20,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
 	/// Storage: Treasury Proposals (r:0 w:1)
 	/// Proof: Treasury Proposals (max_values: None, max_size: Some(108), added: 2583, mode: MaxEncodedLen)
-	fn change_treasurer() -> Weight {
+	fn new_treasurer() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1887`

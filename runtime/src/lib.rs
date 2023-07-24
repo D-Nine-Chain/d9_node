@@ -282,6 +282,7 @@ impl pallet_sudo::Config for Runtime {
 }
 parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = SESSIONS_PER_ERA;
+	pub const SlashDeferDuration: EraIndex = 0;
 }
 impl pallet_staking::Config for Runtime {
 	type Currency = Balances;
@@ -289,11 +290,18 @@ impl pallet_staking::Config for Runtime {
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
 	type ElectionProvider = PhragmenElections;
-	type RewardRemainder = (); //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
-	type Event = RuntimeEvent;
-	type Slash = D9Treasury; //todo[epic=staking] change Slash OnUnblaance to D9Treasury
+	type GenesisElectionProvider = PhragmenElections; //research is this appropriate
+	type MaxNominations = ();
+	type HistoryDepth = (); //todo HistoryDepth implement
+	type RewardRemainder = Treasury; //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
+	type Runtime = RuntimeEvent;
+	type Slash = Treasury; //todo[epic=staking] change Slash OnUnblaance to D9Treasury
 	type Reward = (); //todo[epic=staking,seq=292]  implement OnUnbalanced Trait somewhere
 	type SessionsPerEra = SessionsPerEra;
+	type SlashDeferDuration = SlashDeferDuration;
+	type AdminOrigin = D9Treasurer;
+	//type BondDuration
+	//type SessionInterface = ;
 } //todo[epic=staking,seq=293] reseaerch Treasury. review it's code more.
 
 parameter_types! {
@@ -310,7 +318,7 @@ impl pallet_session::Config for Runtime {
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys; //todo opaque::SessionKeys review for this
-	type WeightInfo = ();
+	type WeightInfo = WeightInfo;
 }
 
 parameter_types! {

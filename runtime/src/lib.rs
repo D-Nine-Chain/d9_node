@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
 use frame_system::WeightInfo;
-use pallet_d9_treasury;
+use pallet_d9_treasury::{ self, Treasurer };
 use sp_staking::U128CurrencyToVote;
 use frame_support::traits::{ CurrencyToVote, LockIdentifier };
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -86,8 +86,6 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 pub type Balance = u128;
 /// Index of a transaction in the chain.
 pub type Index = u32;
-///currency that is both lockable and Reservable
-pub type D9NativeCurrency = pallet_balances::Pallet<Self>;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
@@ -242,35 +240,38 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = ();
 }
 
-/// Existential deposit.
-pub const EXISTENTIAL_DEPOSIT: u128 = 1000;
-
+parameter_types! {
+   pub const MaxLocks = 50:u32;
+   pub const ExistentialDeposit:u128 = EXISTENTIAL_DEPOSIT;
+   pub const ReserveIdentifier = *b"reserve";
+   pub const MaxHolds = 50:u32;
+   pub const MaxReserves= 50:u32;
+   pub const MaxFreezes = 50:u32;   
+}
 impl pallet_balances::Config for Runtime {
-	type MaxLocks = ConstU32<50>;
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
-	/// The type for recording an account's balance.
-	type Balance = Balance;
-	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
-	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
-	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type Balance = Balance;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type ReserveIdentifier = ();
+	type RuntimeHoldReason = ();
 	type FreezeIdentifier = ();
-	type MaxFreezes = ();
-	type HoldIdentifier = ();
-	type MaxHolds = ();
+	type MaxLocks = MaxLocks;
+	type MaxHolds = MaxHolds;
+	type MaxReserves = MaxReserves;
+	type MaxFreezes = MaxFreezes;
 }
 
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
+   pub const OperationalFeeMultiplier:u8 = 5;
 }
-
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type OperationalFeeMultiplier = ConstU8<5>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
@@ -280,29 +281,33 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 }
+
 parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = SESSIONS_PER_ERA;
 	pub const SlashDeferDuration: EraIndex = 0;
+	pub const MaxNominatorRewardedPerValidator: sp_staking::u32 = 64;
+	pub const BondingDuration: EraIndex = 3;
 }
 impl pallet_staking::Config for Runtime {
 	type Currency = Balances;
-	type CurrencyBalance = Balance;
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
 	type ElectionProvider = PhragmenElections;
 	type GenesisElectionProvider = PhragmenElections; //research is this appropriate
-	type MaxNominations = ();
-	type HistoryDepth = (); //todo HistoryDepth implement
 	type RewardRemainder = Treasury; //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
-	type Runtime = RuntimeEvent;
-	type Slash = Treasury; //todo[epic=staking] change Slash OnUnblaance to D9Treasury
-	type Reward = (); //todo[epic=staking,seq=292]  implement OnUnbalanced Trait somewhere
+	type Event = Event;
+	type Slash = Treasury;
+	type Reward = D9Treasurer::RewardBalancer; //todo[epic=staking,seq=292] Reward pallet_staking config perhaps this implementation will be suitable for hte custom rewards for the nodes. for now leaving it as () to permit some default action
 	type SessionsPerEra = SessionsPerEra;
+	type BondingDuration = BondingDuration; //todo[epic=staking,seq=292] implement BondingDuration
 	type SlashDeferDuration = SlashDeferDuration;
-	type AdminOrigin = D9Treasurer;
-	//type BondDuration
-	//type SessionInterface = ;
-} //todo[epic=staking,seq=293] reseaerch Treasury. review it's code more.
+	type SlashCancelOrigin = ();
+	type SessionInterface = Self; //todo[epic=staking,seq=293] implement SessionInterface
+	type EraPayout = ();
+	type NextNewSession = ();
+	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+	type WeightInfo = WeightInfo;
+}
 
 parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
@@ -322,12 +327,15 @@ impl pallet_session::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ElectionPalletId: LockIdentifier = PalletId(*b"election_pallet");
+	pub const ElectionPalletId: LockIdentifier = ELECTION_LOCK;
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
-	pub const TermDuration: BlockNumber = 1 * DAY;
+	pub const DesiredMembers: u32 = DESIRED_MEMBERS;
+	pub const DesiredRunnersUp: u32 = DESIRED_RUNNERS_UP;
+	pub const TermDuration: BlockNumber = SESSION_PERIOD;
 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
+	pub const MaxVotesPerVoter = MAX_VOTES_PER_VOTER;
 }
 
 impl pallet_elections_phragmen::Config for Runtime {
@@ -342,10 +350,15 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type VotingBondFactor = VotingBondFactor; // A factor multiplied with the number of votes to derive the final amount of currency to be locked up for voting.
 	type LoserCandidate = (); // The trait called when a candidate does not get elected.
 	type KickedMember = (); // The trait called when a member gets kicked out.
+	type DesiredMembers = DesiredMembers;
+	type DesiredRunnersUp = DesiredRunnersUp;
 	type TermDuration = TermDuration; // Defines how long each round (or "term") should last.
 	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
+	type MaxVoters = ();
+	type MaxVotesPerVoter = MaxVotesPerVoter;
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
 }
+
 impl pallet_d9_treasurer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type EnsureTreasurer = EnsureTreasurer;
@@ -353,7 +366,7 @@ impl pallet_d9_treasurer::Config for Runtime {
 parameters_types! {
 	pub const ProposalBond = 100_000:Permill;
    pub const PrposalBondMinimum = ONE_THOUSAND_D9_TOKENS:Balance;
-   pub const TreasuryPalletId = PalletId(*b"d9/treas");
+   pub const TreasuryPalletId = PalletId(*b"treasury");
    pub const Burn = 0:Permill;
    pub const SpendPeriod = 1:BlockNumber;
 }

@@ -57,15 +57,15 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
-		fn default() -> Self {
-			// Default values for your genesis config
-			Self {
-				treasurer: Default::default(),
-				_marker: Default::default(),
-			}
-		}
-	}
+	// impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+	// 	fn default() -> Self {
+	// 		// Default values for your genesis config
+	// 		Self {
+	// 			treasurer: Default::default(),
+	// 			_marker: Default::default(),
+	// 		}
+	// 	}
+	// }
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -84,8 +84,8 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::call_index(0)]
 		#[pallet::weight(
-			T::DbWeight::get().reads_writes(1, 1) + // Reading current treasurer and writing new treasurer
-				(10_000_u64).into() // Some arbitrary computation weight
+			T::DbWeight::get().reads_writes(1, 1) // Reading current treasurer and writing new treasurer
+			// (10_000_u64).into() // Some arbitrary computation weight
 		)]
 		pub fn new_treasurer(origin: OriginFor<T>, new_treasurer: T::AccountId) -> DispatchResult {
 			let caller = ensure_signed(origin)?;

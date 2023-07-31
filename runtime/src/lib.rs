@@ -5,7 +5,6 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-pub mod constants;
 use frame_system::WeightInfo;
 use pallet_d9_treasury::{ self, Treasurer };
 use sp_staking::U128CurrencyToVote;
@@ -69,6 +68,7 @@ use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplie
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{ Perbill, Permill };
+pub mod constants;
 /// Import the template pallet.
 // pub use pallet_template;
 

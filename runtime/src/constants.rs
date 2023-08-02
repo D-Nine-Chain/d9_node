@@ -2,7 +2,8 @@
 //! this is not to be used for pallets constants that is to be defined in parameter_types!
 
 use frame_support::traits::LockIdentifier;
-use crate::{ Balance, Block };
+use sp_staking::SessionIndex;
+use crate::{ Balance, Block, BlockNumber };
 
 //chain
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
@@ -15,7 +16,7 @@ pub const MILLISECS_PER_BLOCK: u64 = 3000;
 // pub const BLOCKS_PER_METRIC_MINUTE: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const MINUTE: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOUR: BlockNumber = MINUTE * 60;
-pub const DAY: BlockNumber = CHAIN_HOURS * 24;
+pub const DAY: BlockNumber = HOUR * 24;
 pub const WEEK: BlockNumber = DAY * 7;
 
 //currency
@@ -32,12 +33,12 @@ pub const CANDIDACY_BOND: Balance = 20 * ONE_THOUSAND_D9_TOKENS;
 pub const VOTING_BOND_BASE: Balance = 10 * ONE_THOUSAND_D9_TOKENS;
 // the cost of a single vote e.g. if 2 then 2 votes cost 4 tokens
 pub const VOTING_BOND_FACTOR: Balance = 1;
-const STAKING_ID: LockIdentifier = *b"staking";
-const ELECTION_LOCK: LockIdentifier = *b"election";
-const DESIRED_MEMBERS: u32 = 27;
-const DESIRED_RUNNERS_UP: u32 = 100;
-const SESSION_PERIOD: BlockNumber = 1 * DAY;
-const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
-const SESSIONS_PER_ERA: SessionIndex = 1;
-const MAX_CANDIDATES: u32 = 200;
-const MAX_VOTES_PER_VOTER: u32 = 1;
+pub const STAKING_ID: LockIdentifier = *b"staking";
+pub const ELECTION_LOCK: LockIdentifier = *b"election";
+pub const DESIRED_MEMBERS: u32 = 27;
+pub const DESIRED_RUNNERS_UP: u32 = 100;
+pub const SESSION_PERIOD: BlockNumber = 1 * DAY;
+pub const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
+pub const SESSIONS_PER_ERA: SessionIndex = 1;
+pub const MAX_CANDIDATES: u32 = 200;
+pub const MAX_VOTES_PER_VOTER: u32 = 1;

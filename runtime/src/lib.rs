@@ -5,10 +5,10 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+pub mod constants;
 use frame_system::WeightInfo;
-use pallet_d9_treasury::{ self, Treasurer };
-use sp_staking::U128CurrencyToVote;
-use frame_support::traits::{ CurrencyToVote, LockIdentifier };
+use sp_staking::currency_to_vote::U128CurrencyToVote;
+use frame_support::traits::{ CurrencyToVote, LockIdentifier, U128CurrencyToVote };
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -68,7 +68,6 @@ use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplie
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{ Perbill, Permill };
-pub mod constants;
 /// Import the template pallet.
 // pub use pallet_template;
 
@@ -162,7 +161,6 @@ parameter_types! {
 }
 
 // Configure FRAME pallets to include in runtime.
-//todo[epic=staking] implement sessions/staking pallet
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -241,12 +239,12 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-   pub const MaxLocks = 50:u32;
-   pub const ExistentialDeposit:u128 = EXISTENTIAL_DEPOSIT;
-   pub const ReserveIdentifier = *b"reserve";
-   pub const MaxHolds = 50:u32;
-   pub const MaxReserves= 50:u32;
-   pub const MaxFreezes = 50:u32;   
+	pub const MaxLocks: u32 = 50;
+	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
+	pub const ReserveIdentifier: &'static [u8; 7] = b"reserve";
+	pub const MaxHolds: u32 = 50;
+	pub const MaxReserves: u32 = 50;
+	pub const MaxFreezes: u32 = 50;
 }
 impl pallet_balances::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -256,7 +254,6 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type ReserveIdentifier = ();
-	type RuntimeHoldReason = ();
 	type FreezeIdentifier = ();
 	type MaxLocks = MaxLocks;
 	type MaxHolds = MaxHolds;
@@ -297,7 +294,7 @@ impl pallet_staking::Config for Runtime {
 	type RewardRemainder = Treasury; //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
 	type Event = Event;
 	type Slash = Treasury;
-	type Reward = D9Treasurer::RewardBalancer; //todo[epic=staking,seq=292] Reward pallet_staking config perhaps this implementation will be suitable for hte custom rewards for the nodes. for now leaving it as () to permit some default action
+	type Reward = D9Treasury::RewardBalancer; //todo[epic=staking,seq=292] Reward pallet_staking config perhaps this implementation will be suitable for hte custom rewards for the nodes. for now leaving it as () to permit some default action
 	type SessionsPerEra = SessionsPerEra;
 	type BondingDuration = BondingDuration; //todo[epic=staking,seq=292] implement BondingDuration
 	type SlashDeferDuration = SlashDeferDuration;
@@ -317,9 +314,9 @@ impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = Address;
 	type ValidatorIdOf = pallet_staking::StashOf<Self>;
-	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+	type ShouldEndSession = Session::PeriodicSessions<Period, Offset>;
+	type NextSessionRotation = Session::PeriodicSessions<Period, Offset>;
+	type SessionManager = Session::historical::NoteHistoricalRoot<Self, Staking>;
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys; //todo opaque::SessionKeys review for this
@@ -327,7 +324,7 @@ impl pallet_session::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ElectionPalletId: LockIdentifier = ELECTION_LOCK;
+	pub const ElectionPalletId: PalletId = PalletId(*const b"election");
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
@@ -335,7 +332,7 @@ parameter_types! {
 	pub const DesiredRunnersUp: u32 = DESIRED_RUNNERS_UP;
 	pub const TermDuration: BlockNumber = SESSION_PERIOD;
 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
-	pub const MaxVotesPerVoter = MAX_VOTES_PER_VOTER;
+	pub const MaxVotesPerVoter: u32 = MAX_VOTES_PER_VOTER;
 }
 
 impl pallet_elections_phragmen::Config for Runtime {
@@ -363,22 +360,22 @@ impl pallet_d9_treasurer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type EnsureTreasurer = EnsureTreasurer;
 }
-parameters_types! {
-	pub const ProposalBond = 100_000:Permill;
-   pub const PrposalBondMinimum = ONE_THOUSAND_D9_TOKENS:Balance;
-   pub const TreasuryPalletId = PalletId(*b"treasury");
-   pub const Burn = 0:Permill;
+parameter_types! {
+	pub const ProposalBond:Permill = 100_000;
+   pub const PrposalBondMinimum:Balance = ONE_THOUSAND_D9_TOKENS;
+   pub const TreasuryPalletId:PalletId= PalletId(*const b"treasury");
+   pub const Burn:Permill = 0;
    pub const SpendPeriod = 1:BlockNumber;
 }
 //todo[epic=WeightInfo] manage the weightinfo, research and implement properly all that shit for the runtime pallets
 impl pallet_treasury::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type ApproveOrigin = D9Treasurer;
-	type RejectOrigin = D9Treasurer;
+	type ApproveOrigin = D9Treasury;
+	type RejectOrigin = D9Treasury;
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
-	type PrposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMinimum = ProposalBondMinimum;
 	type ProposalBondMaximum = ();
 	type PalletId = TreasuryPalletId;
 	type Burn = Burn;
@@ -387,7 +384,7 @@ impl pallet_treasury::Config for Runtime {
 	type WeightInfo = WeightInfo;
 	type SpendFunds = ();
 	type MaxApprovals = ();
-	type SpendOrigin = D9Treasurer;
+	type SpendOrigin = D9Treasury;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -408,9 +405,9 @@ construct_runtime!(
       Session: pallet_session,
       Staking:pallet_staking,
       PhragmenElections: pallet_elections_phragmen,
-      Collective, pallet_collective,
+      Collective: pallet_collective,
       Treasury: pallet_treasury,
-      D9Treasurer: pallet_d9_treasurer,
+      D9Treasury: pallet_d9_treasury,
       // ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );
@@ -644,7 +641,7 @@ impl_runtime_apis! {
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
-
+         use frame_support::PalletId;
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 

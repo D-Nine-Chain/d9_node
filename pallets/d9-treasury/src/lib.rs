@@ -36,13 +36,14 @@ pub mod pallet {
 	/// Number of proposals that have been made.
 	#[pallet::storage]
 	#[pallet::getter(fn treasurer)]
-	pub(crate) type Treasurer<T: Config<I>, I: 'static = ()> = StorageValue<
+	pub type Treasurer<T: Config<I>, I: 'static = ()> = StorageValue<
 		_,
 		Option<T::AccountId>,
 		OptionQuery
 	>;
 
 	#[pallet::genesis_config]
+	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub treasurer: Option<T::AccountId>,
 		_marker: PhantomData<I>,

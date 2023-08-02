@@ -1478,12 +1478,15 @@ dependencies = [
  "getrandom 0.2.10",
  "pallet-aura",
  "pallet-balances",
+ "pallet-collective",
  "pallet-d9-treasury",
  "pallet-grandpa",
+ "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -1495,6 +1498,7 @@ dependencies = [
  "sp-offchain",
  "sp-runtime",
  "sp-session",
+ "sp-staking",
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
@@ -4737,6 +4741,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-collective"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.42#ff24c60ac7d9f87727ecdd0ded9a80c56e4f4b65"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-d9-treasury"
 version = "0.1.0-dev"
 dependencies = [
@@ -4881,12 +4902,14 @@ name = "pallet-treasury"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.42#ff24c60ac7d9f87727ecdd0ded9a80c56e4f4b65"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-runtime",
  "sp-std",
 ]

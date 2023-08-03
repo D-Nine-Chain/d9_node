@@ -6,12 +6,14 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
-use frame_system::WeightInfo;
-use sp_staking::currency_to_vote::U128CurrencyToVote;
-use frame_support::traits::{ CurrencyToVote, LockIdentifier, U128CurrencyToVote };
+use crate::constants::*;
+use frame_system::{ WeightInfo, EnsureRoot };
+use frame_support::traits::{ U128CurrencyToVote };
+use frame_support::PalletId;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_staking::{ EraIndex, SessionIndex };
 use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
 use sp_runtime::{
 	create_runtime_str,
@@ -29,7 +31,6 @@ use sp_runtime::{
 	transaction_validity::{ TransactionSource, TransactionValidity },
 	ApplyExtrinsicResult,
 	MultiSignature,
-	key_types,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -229,12 +230,14 @@ impl pallet_grandpa::Config for Runtime {
 	type KeyOwnerProof = sp_core::Void;
 	type EquivocationReportSystem = ();
 }
-
+parameter_types! {
+	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+}
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
 	type OnTimestampSet = Aura;
-	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
+	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
 }
 
@@ -245,6 +248,7 @@ parameter_types! {
 	pub const MaxHolds: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 	pub const MaxFreezes: u32 = 50;
+	pub const HoldIdentifier: &'static [u8; 4] = b"balances_hold";
 }
 impl pallet_balances::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -259,6 +263,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxHolds = MaxHolds;
 	type MaxReserves = MaxReserves;
 	type MaxFreezes = MaxFreezes;
+	type HoldIdentifier = HoldIdentifier;
 }
 
 parameter_types! {
@@ -280,51 +285,71 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const SessionsPerEra: sp_staking::SessionIndex = SESSIONS_PER_ERA;
+	pub const SessionsPerEra: SessionIndex = SESSIONS_PER_ERA;
 	pub const SlashDeferDuration: EraIndex = 0;
-	pub const MaxNominatorRewardedPerValidator: sp_staking::u32 = 64;
+	pub const MaxNominatorRewardedPerValidator: u32 = 64;
 	pub const BondingDuration: EraIndex = 3;
 }
+type RewardBalancer = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
 impl pallet_staking::Config for Runtime {
 	type Currency = Balances;
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
 	type ElectionProvider = PhragmenElections;
-	type GenesisElectionProvider = PhragmenElections; //research is this appropriate
-	type RewardRemainder = Treasury; //todo[epic=staking,seq=291] implement  OnUnbalanced Trait for RewardRemainder
-	type Event = Event;
+	type GenesisElectionProvider = PhragmenElections;
+	type RewardRemainder = Treasury;
+	type RuntimeEvent = RuntimeEvent;
 	type Slash = Treasury;
-	type Reward = D9Treasury::RewardBalancer; //todo[epic=staking,seq=292] Reward pallet_staking config perhaps this implementation will be suitable for hte custom rewards for the nodes. for now leaving it as () to permit some default action
+	type Reward = RewardBalancer;
 	type SessionsPerEra = SessionsPerEra;
-	type BondingDuration = BondingDuration; //todo[epic=staking,seq=292] implement BondingDuration
+	type BondingDuration = BondingDuration;
 	type SlashDeferDuration = SlashDeferDuration;
-	type SlashCancelOrigin = ();
-	type SessionInterface = Self; //todo[epic=staking,seq=293] implement SessionInterface
+	type SessionInterface = Self;
 	type EraPayout = ();
 	type NextNewSession = ();
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-	type WeightInfo = WeightInfo;
+	type WeightInfo = ();
 }
 
 parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
 	pub const Offset: BlockNumber = SESSION_OFFSET;
 }
+type PeriodicSessions = pallet_session::PeriodicSessions<Period, Offset>;
+type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, Staking>;
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = Address;
 	type ValidatorIdOf = pallet_staking::StashOf<Self>;
-	type ShouldEndSession = Session::PeriodicSessions<Period, Offset>;
-	type NextSessionRotation = Session::PeriodicSessions<Period, Offset>;
-	type SessionManager = Session::historical::NoteHistoricalRoot<Self, Staking>;
+	type ShouldEndSession = PeriodicSessions;
+	type NextSessionRotation = PeriodicSessions;
+	type SessionManager = SessionManager;
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys; //todo opaque::SessionKeys review for this
-	type WeightInfo = WeightInfo;
+	type WeightInfo = ();
 }
 
 parameter_types! {
-	pub const ElectionPalletId: PalletId = PalletId(*const b"election");
+   //note - MotionDuration constant may need to be changed to correspond to some other value, for now it will be 1 HOUR (hour in block time based on corresponding Blocks per hour )
+   MotionDuration: BlockNumber = HOUR;
+   MaxMembers: u32 = 100;
+}
+impl pallet_collective::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type MotionDuration = MotionDuration;
+	type MaxProposals = ();
+	type MaxMembers = MaxMembers;
+	type DefaultVote = ();
+	type WeightInfo = ();
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = ();
+}
+
+parameter_types! {
+	pub const ElectionPalletId: PalletId = PalletId(b"election");
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
@@ -355,17 +380,17 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type MaxVotesPerVoter = MaxVotesPerVoter;
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
 }
-
-impl pallet_d9_treasurer::Config for Runtime {
+type EnsureTreasurer = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
+impl pallet_d9_treasury::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type EnsureTreasurer = EnsureTreasurer;
 }
 parameter_types! {
-	pub const ProposalBond:Permill = 100_000;
-   pub const PrposalBondMinimum:Balance = ONE_THOUSAND_D9_TOKENS;
-   pub const TreasuryPalletId:PalletId= PalletId(*const b"treasury");
-   pub const Burn:Permill = 0;
-   pub const SpendPeriod = 1:BlockNumber;
+	pub const ProposalBond: Permill = 100_000;
+	pub const ProposalBondMinimum: Balance = ONE_THOUSAND_D9_TOKENS;
+	pub const TreasuryPalletId: PalletId = PalletId(b"treasury");
+	pub const Burn: Permill = 0;
+	pub const SpendPeriod: BlockNumber = 1;
 }
 //todo[epic=WeightInfo] manage the weightinfo, research and implement properly all that shit for the runtime pallets
 impl pallet_treasury::Config for Runtime {
@@ -381,7 +406,7 @@ impl pallet_treasury::Config for Runtime {
 	type Burn = Burn;
 	type SpendPeriod = SpendPeriod;
 	type BurnDestination = ();
-	type WeightInfo = WeightInfo;
+	type WeightInfo = ();
 	type SpendFunds = ();
 	type MaxApprovals = ();
 	type SpendOrigin = D9Treasury;
@@ -408,7 +433,6 @@ construct_runtime!(
       Collective: pallet_collective,
       Treasury: pallet_treasury,
       D9Treasury: pallet_d9_treasury,
-      // ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 	}
 );
 

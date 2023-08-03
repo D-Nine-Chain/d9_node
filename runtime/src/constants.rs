@@ -3,7 +3,7 @@
 
 use frame_support::traits::LockIdentifier;
 use sp_staking::SessionIndex;
-use crate::{ Balance, Block, BlockNumber };
+use crate::{ Balance, BlockNumber };
 
 //chain
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;

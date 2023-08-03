@@ -15,6 +15,7 @@ use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_staking::{ EraIndex, SessionIndex };
 use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
+use sp_std::prelude::*;
 use sp_runtime::{
 	create_runtime_str,
 	generic,
@@ -285,18 +286,34 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
+	pub const MaxWinners: u32 = DESIRED_MEMBERS;
+	pub const TargetsBound: u32 = DESIRED_RUNNERS_UP;
+}
+type Solver = frame_election_provider_support::SequentialPhragmen;
+impl frame_election_provider_support::onchain::Config for Runtime {
+	type System: frame_system::Config = frame_system::Module<Runtime>;
+	type Solver = Solver;
+	type DataProvider = Staking;
+	type WeightInfo = ();
+	type MaxWinners = MaxWinners;
+	type VotersBound = ();
+	type TargetsBound = TargetsBound;
+}
+
+parameter_types! {
 	pub const SessionsPerEra: SessionIndex = SESSIONS_PER_ERA;
 	pub const SlashDeferDuration: EraIndex = 0;
 	pub const MaxNominatorRewardedPerValidator: u32 = 64;
 	pub const BondingDuration: EraIndex = 3;
 }
 type RewardBalancer = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
+type OnChainExecution = frame_election_provider_support::onchain::OnChainExecution<Runtime>;
 impl pallet_staking::Config for Runtime {
 	type Currency = Balances;
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
-	type ElectionProvider = PhragmenElections;
-	type GenesisElectionProvider = PhragmenElections;
+	type ElectionProvider = OnChainExecution;
+	type GenesisElectionProvider = OnChainExecution;
 	type RewardRemainder = Treasury;
 	type RuntimeEvent = RuntimeEvent;
 	type Slash = Treasury;
@@ -349,7 +366,7 @@ impl pallet_collective::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ElectionPalletId: PalletId = PalletId(b"election");
+	pub const ElectionPalletId: PalletId = PalletId(*b"election");
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
@@ -386,10 +403,10 @@ impl pallet_d9_treasury::Config for Runtime {
 	type EnsureTreasurer = EnsureTreasurer;
 }
 parameter_types! {
-	pub const ProposalBond: Permill = 100_000;
+	pub const ProposalBond: Permill = Permill::from_percent(10);
 	pub const ProposalBondMinimum: Balance = ONE_THOUSAND_D9_TOKENS;
 	pub const TreasuryPalletId: PalletId = PalletId(b"treasury");
-	pub const Burn: Permill = 0;
+	pub const Burn: Permill = Permill::from_percent(0);
 	pub const SpendPeriod: BlockNumber = 1;
 }
 //todo[epic=WeightInfo] manage the weightinfo, research and implement properly all that shit for the runtime pallets

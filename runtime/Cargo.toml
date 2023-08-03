@@ -37,6 +37,7 @@ pallet-staking = { version = "4.0.0-dev", default-features = false, git = "https
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 frame-try-runtime = { version = "0.10.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.42" }
 pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
+frame-election-provider-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 frame-executive = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 sp-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
@@ -78,6 +79,7 @@ std = [
    "frame-system-rpc-runtime-api/std",
    "frame-system/std",
    "frame-try-runtime/std",
+   "frame-election-provider-support/std",
    "pallet-aura/std",
    "pallet-balances/std",
    "pallet-treasury/std",
@@ -87,6 +89,7 @@ std = [
    "pallet-timestamp/std",
    "pallet-transaction-payment-rpc-runtime-api/std",
    "pallet-transaction-payment/std",
+   "pallet-elections-phragmen/std",
    "sp-api/std",
    "sp-staking/std",
    "sp-block-builder/std",

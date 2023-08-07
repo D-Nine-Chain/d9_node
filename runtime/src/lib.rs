@@ -11,6 +11,7 @@ use frame_system::{ WeightInfo, EnsureRoot };
 use frame_support::traits::{ U128CurrencyToVote };
 use frame_support::PalletId;
 use pallet_grandpa::AuthorityId as GrandpaId;
+use pallet_staking::UseNominatorsAndValidatorsMap;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_staking::{ EraIndex, SessionIndex };
@@ -37,7 +38,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
+use frame_election_provider_support::{ onchain, VoteWeight, SequentialPhragmen };
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime,
@@ -249,7 +250,7 @@ parameter_types! {
 	pub const MaxHolds: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 	pub const MaxFreezes: u32 = 50;
-	pub const HoldIdentifier: &'static [u8; 4] = b"balances_hold";
+	pub const HoldIdentifier: &'static [u8; 4] = b"hold";
 }
 impl pallet_balances::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -264,7 +265,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxHolds = MaxHolds;
 	type MaxReserves = MaxReserves;
 	type MaxFreezes = MaxFreezes;
-	type HoldIdentifier = HoldIdentifier;
+	type HoldIdentifier = ();
 }
 
 parameter_types! {
@@ -289,10 +290,11 @@ parameter_types! {
 	pub const MaxWinners: u32 = DESIRED_MEMBERS;
 	pub const TargetsBound: u32 = DESIRED_RUNNERS_UP;
 }
-type Solver = frame_election_provider_support::SequentialPhragmen;
+// type Solver = frame_election_provider_support::SequentialPhragmen<AccountId, Perbill>;
 impl frame_election_provider_support::onchain::Config for Runtime {
-	type System: frame_system::Config = frame_system::Module<Runtime>;
-	type Solver = Solver;
+	// type System = frame_system::Pallet<Runtime>;
+	type System = Runtime;
+	type Solver = SequentialPhragmen<AccountId, Perbill>;
 	type DataProvider = Staking;
 	type WeightInfo = ();
 	type MaxWinners = MaxWinners;
@@ -302,18 +304,46 @@ impl frame_election_provider_support::onchain::Config for Runtime {
 
 parameter_types! {
 	pub const SessionsPerEra: SessionIndex = SESSIONS_PER_ERA;
-	pub const SlashDeferDuration: EraIndex = 0;
-	pub const MaxNominatorRewardedPerValidator: u32 = 64;
-	pub const BondingDuration: EraIndex = 3;
+	pub const SlashDeferDuration: EraIndex = SLASH_DEFER_DURATION;
+	pub const MaxNominatorRewardedPerValidator: u32 = MAX_NOMINATORS_REWARDED_PER_VALIDATOR;
+	pub const BondingDuration: EraIndex = BONDING_DURATION;
+	pub const MaxNominations: u32 = MAX_NOMINATIONS;
+	pub const HistoryDepth: u32 = HISTORY_DEPTH;
+	pub const OffendingValidatorsThreshold: Perbill = OFFENDING_VALIDATORS_THRESHOLD;
+	pub const MaxUnlockingChunks: u32 = MAX_UNLOCKING_CHUNKS;
+	pub const Accuracy: Perbill = Perbill::from_percent(95);
+	pub const MaxOnChainElectingVoters: u32 = MAX_ON_CHAIN_ELECTING_VOTERS;
+	pub const MaxOnChainElectableTargets: u32 = MAX_ON_CHAIN_ELECTABLE_TARGETS;
 }
 type RewardBalancer = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
-type OnChainExecution = frame_election_provider_support::onchain::OnChainExecution<Runtime>;
+pub struct StakingBenchmarkingConfig;
+impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
+	type MaxNominators = ConstU32<1000>;
+	type MaxValidators = ConstU32<1000>;
+}
+pub struct OnChainSeqPhragmen;
+impl onchain::Config for OnChainSeqPhragmen {
+	type System = Runtime;
+	type Solver = SequentialPhragmen<
+		AccountId,
+		Perbill
+		// pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>
+	>;
+	type DataProvider = Staking;
+	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
+	type MaxWinners = <Runtime as pallet_elections_phragmen::Config>::DesiredMembers;
+	type VotersBound = MaxOnChainElectingVoters;
+	type TargetsBound = MaxOnChainElectableTargets;
+}
+
 impl pallet_staking::Config for Runtime {
 	type Currency = Balances;
+	type CurrencyBalance = Balance;
+	type MaxNominations = MaxNominations;
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
-	type ElectionProvider = OnChainExecution;
-	type GenesisElectionProvider = OnChainExecution;
+	type ElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
+	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type RewardRemainder = Treasury;
 	type RuntimeEvent = RuntimeEvent;
 	type Slash = Treasury;
@@ -326,6 +356,19 @@ impl pallet_staking::Config for Runtime {
 	type NextNewSession = ();
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type WeightInfo = ();
+	type AdminOrigin = EnsureRoot<AccountId>;
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
+	type VoterList = pallet_staking::UseNominatorsAndValidatorsMap<Runtime>;
+	type TargetList = pallet_staking::UseValidatorsMap<Runtime>;
+	type MaxUnlockingChunks = MaxUnlockingChunks;
+	type OnStakerSlash = ();
+	type HistoryDepth = HistoryDepth;
+	type BenchmarkingConfig = StakingBenchmarkingConfig;
+}
+
+impl pallet_session::historical::Config for Runtime {
+	type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
 
 parameter_types! {
@@ -336,7 +379,7 @@ type PeriodicSessions = pallet_session::PeriodicSessions<Period, Offset>;
 type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, Staking>;
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ValidatorId = Address;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_staking::StashOf<Self>;
 	type ShouldEndSession = PeriodicSessions;
 	type NextSessionRotation = PeriodicSessions;
@@ -401,11 +444,13 @@ type EnsureTreasurer = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 impl pallet_d9_treasury::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type EnsureTreasurer = EnsureTreasurer;
+	type Currency = Balances;
+	type RewardBalancer = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
 }
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(10);
 	pub const ProposalBondMinimum: Balance = ONE_THOUSAND_D9_TOKENS;
-	pub const TreasuryPalletId: PalletId = PalletId(b"treasury");
+	pub const TreasuryPalletId: PalletId = PalletId(*b"treasury");
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const SpendPeriod: BlockNumber = 1;
 }
@@ -413,7 +458,7 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type ApproveOrigin = D9Treasury;
+	type ApproveOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 	type RejectOrigin = D9Treasury;
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
@@ -426,7 +471,7 @@ impl pallet_treasury::Config for Runtime {
 	type WeightInfo = ();
 	type SpendFunds = ();
 	type MaxApprovals = ();
-	type SpendOrigin = D9Treasury;
+	type SpendOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

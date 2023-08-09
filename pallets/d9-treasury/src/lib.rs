@@ -15,6 +15,9 @@ pub mod pallet {
 		traits::{ EnsureOrigin, OnUnbalanced, Currency, Imbalance },
 	};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::{ traits::AtLeast32BitUnsigned, FixedPointOperand };
+	use sp_std::fmt::Debug;
+	use codec::Codec;
 	pub type PositiveImbalanceOf<
 		T,
 		I = ()
@@ -25,11 +28,22 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config<I: 'static = ()>: frame_system::Config {
+		type Balance: Parameter +
+			Member +
+			AtLeast32BitUnsigned +
+			Codec +
+			Default +
+			Copy +
+			MaybeSerializeDeserialize +
+			Debug +
+			MaxEncodedLen +
+			TypeInfo +
+			FixedPointOperand;
 		type RuntimeEvent: From<Event<Self, I>> +
 			IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		type EnsureTreasurer: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
+		// type EnsureTreasurer: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 		type Currency: Currency<Self::AccountId>;
-		type RewardBalancer: OnUnbalanced<PositiveImbalanceOf<Self, I>>;
+		type MaxSpendPerTransaction: Get<Self::Balance>;
 		// type OnUnbalance: OnUnbalanced<<Self::Currency as Currency<Self::AccountId>>::PositiveImbalance>;
 	}
 
@@ -98,9 +112,52 @@ pub mod pallet {
 			Ok(())
 		}
 	}
+	pub struct EnsureTreasurerLimit<T: Config<I>, I: 'static>(sp_std::marker::PhantomData<(T, I)>);
 
+	impl<T: Config<I>, I> EnsureOrigin<T::RuntimeOrigin> for EnsureTreasurerLimit<T, I> {
+		type Success = T::Balance;
+
+		fn try_origin(o: OriginFor<T>) -> Result<Self::Success, OriginFor<T>> {
+			let caller = match ensure_signed(o.clone()) {
+				Ok(caller) => caller,
+				Err(_) => {
+					return Err(o.clone());
+				}
+			};
+			let current_treasurer = Treasurer::<T, I>::get().unwrap();
+
+			if let Some(current_treasurer) = current_treasurer {
+				if caller == current_treasurer {
+					Ok(T::MaxSpendPerTransaction::get())
+				} else {
+					Err(o)
+				}
+			} else {
+				Err(o)
+			}
+		}
+	}
+	/// Provides a way to ensure that only the treasurer can execute certain actions.
+	///
+	/// This struct acts as a guard to check that the origin of a call is indeed the treasurer.
+	/// It leverages the Substrate's `EnsureOrigin` trait to perform the check.
+	///
+	/// # Usage
+	///
+	/// It can be used in runtime modules where certain operations are restricted to the treasurer.
+	/// The treasurer's account ID is fetched from storage for verification.
+	///
+	/// # Type Parameters
+	///
+	/// - `T`: Represents the runtime configuration.
+	/// - `I`: A lifetime parameter.
+	///
+	/// # Example
+	///
+	/// If used as an origin in a dispatchable call, it will ensure that the call will only be
+	/// successful if it is initiated by the treasurer.
+	///
 	pub struct EnsureTreasurer<T: Config<I>, I: 'static>(sp_std::marker::PhantomData<(T, I)>);
-
 	impl<T: Config<I>, I> EnsureOrigin<T::RuntimeOrigin> for EnsureTreasurer<T, I> {
 		type Success = T::AccountId;
 

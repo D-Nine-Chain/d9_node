@@ -8,15 +8,15 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
 use crate::constants::*;
 use frame_system::{ WeightInfo, EnsureRoot };
-use frame_support::traits::{ U128CurrencyToVote };
+use frame_support::traits::{ U128CurrencyToVote, LockIdentifier };
 use frame_support::PalletId;
+use pallet_d9_treasury::pallet;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_staking::UseNominatorsAndValidatorsMap;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_staking::{ EraIndex, SessionIndex };
 use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
-use sp_std::prelude::*;
 use sp_runtime::{
 	create_runtime_str,
 	generic,
@@ -315,7 +315,6 @@ parameter_types! {
 	pub const MaxOnChainElectingVoters: u32 = MAX_ON_CHAIN_ELECTING_VOTERS;
 	pub const MaxOnChainElectableTargets: u32 = MAX_ON_CHAIN_ELECTABLE_TARGETS;
 }
-type RewardBalancer = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
 pub struct StakingBenchmarkingConfig;
 impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 	type MaxNominators = ConstU32<1000>;
@@ -347,7 +346,7 @@ impl pallet_staking::Config for Runtime {
 	type RewardRemainder = Treasury;
 	type RuntimeEvent = RuntimeEvent;
 	type Slash = Treasury;
-	type Reward = RewardBalancer;
+	type Reward = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
 	type SessionsPerEra = SessionsPerEra;
 	type BondingDuration = BondingDuration;
 	type SlashDeferDuration = SlashDeferDuration;
@@ -391,9 +390,9 @@ impl pallet_session::Config for Runtime {
 }
 
 parameter_types! {
-   //note - MotionDuration constant may need to be changed to correspond to some other value, for now it will be 1 HOUR (hour in block time based on corresponding Blocks per hour )
-   MotionDuration: BlockNumber = HOUR;
-   MaxMembers: u32 = 100;
+	//note - MotionDuration constant may need to be changed to correspond to some other value, for now it will be 1 HOUR (hour in block time based on corresponding Blocks per hour )
+	pub const MotionDuration: BlockNumber = HOUR;
+	pub const MaxMembers: u32 = 100;
 }
 impl pallet_collective::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -402,14 +401,14 @@ impl pallet_collective::Config for Runtime {
 	type MotionDuration = MotionDuration;
 	type MaxProposals = ();
 	type MaxMembers = MaxMembers;
-	type DefaultVote = ();
+	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type WeightInfo = ();
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = ();
 }
 
 parameter_types! {
-	pub const ElectionPalletId: PalletId = PalletId(*b"election");
+	pub const ElectionPalletId: LockIdentifier = *b"election";
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
@@ -440,12 +439,15 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type MaxVotesPerVoter = MaxVotesPerVoter;
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
 }
+parameter_types! {
+	pub const MaxSpendPerTransaction: Balance = 1 * ONE_MILLION_D9_TOKENS;
+}
 type EnsureTreasurer = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 impl pallet_d9_treasury::Config for Runtime {
+	type Balance = Balance;
+	type MaxSpendPerTransaction = MaxSpendPerTransaction;
 	type RuntimeEvent = RuntimeEvent;
-	type EnsureTreasurer = EnsureTreasurer;
 	type Currency = Balances;
-	type RewardBalancer = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
 }
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(10);
@@ -459,7 +461,7 @@ impl pallet_treasury::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type ApproveOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
-	type RejectOrigin = D9Treasury;
+	type RejectOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
@@ -471,7 +473,7 @@ impl pallet_treasury::Config for Runtime {
 	type WeightInfo = ();
 	type SpendFunds = ();
 	type MaxApprovals = ();
-	type SpendOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
+	type SpendOrigin = pallet_d9_treasury::EnsureTreasurerLimit<Runtime, ()>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

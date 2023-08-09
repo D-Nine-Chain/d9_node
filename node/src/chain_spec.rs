@@ -1,5 +1,5 @@
 use d9_node_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
+	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SessionConfig, StakingConfig, PhragmenElectionsConfig,TreasuryConfig, D9TreasuryConfig
 	SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;

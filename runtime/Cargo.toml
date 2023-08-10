@@ -24,7 +24,8 @@ scale-info = { version = "2.5.0", default-features = false, features = [
    "derive",
 ] }
 
-pallet-aura = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
+# pallet-aura = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
+pallet-babe = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 pallet-session = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 pallet-treasury = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
@@ -44,7 +45,7 @@ sp-api = { version = "4.0.0-dev", default-features = false, git = "https://githu
 sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 sp-staking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 sp-block-builder = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
-sp-consensus-aura = { version = "0.10.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
+sp-consensus-babe = { version = "0.10.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 sp-consensus-grandpa = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 sp-core = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 sp-inherents = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
@@ -80,7 +81,7 @@ std = [
    "frame-system/std",
    "frame-try-runtime/std",
    "frame-election-provider-support/std",
-   "pallet-aura/std",
+   "pallet-babe/std",
    "pallet-balances/std",
    "pallet-treasury/std",
    "pallet-collective/std",
@@ -94,7 +95,7 @@ std = [
    "sp-api/std",
    "sp-staking/std",
    "sp-block-builder/std",
-   "sp-consensus-aura/std",
+   "sp-consensus-babe/std",
    "sp-consensus-grandpa/std",
    "sp-core/std",
    "sp-inherents/std",
@@ -121,7 +122,8 @@ try-runtime = [
    "frame-executive/try-runtime",
    "frame-system/try-runtime",
    "frame-support/try-runtime",
-   "pallet-aura/try-runtime",
+   # "pallet-aura/try-runtime",
+   "pallet-babe/try-runtime",
    "pallet-balances/try-runtime",
    "pallet-grandpa/try-runtime",
    "pallet-sudo/try-runtime",

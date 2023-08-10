@@ -6,13 +6,11 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
-use crate::constants::*;
-use frame_system::{ WeightInfo, EnsureRoot };
+pub use crate::constants::*;
+use frame_system::EnsureRoot;
 use frame_support::traits::{ U128CurrencyToVote, LockIdentifier };
 use frame_support::PalletId;
-use pallet_d9_treasury::pallet;
 use pallet_grandpa::AuthorityId as GrandpaId;
-use pallet_staking::UseNominatorsAndValidatorsMap;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_staking::{ EraIndex, SessionIndex };
@@ -38,7 +36,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-use frame_election_provider_support::{ onchain, VoteWeight, SequentialPhragmen };
+use frame_election_provider_support::{ onchain, SequentialPhragmen };
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime,
@@ -376,6 +374,7 @@ parameter_types! {
 }
 type PeriodicSessions = pallet_session::PeriodicSessions<Period, Offset>;
 type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, Staking>;
+
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
@@ -442,7 +441,6 @@ impl pallet_elections_phragmen::Config for Runtime {
 parameter_types! {
 	pub const MaxSpendPerTransaction: Balance = 1 * ONE_MILLION_D9_TOKENS;
 }
-type EnsureTreasurer = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 impl pallet_d9_treasury::Config for Runtime {
 	type Balance = Balance;
 	type MaxSpendPerTransaction = MaxSpendPerTransaction;

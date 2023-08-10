@@ -60,7 +60,7 @@ pub mod pallet {
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub treasurer: Option<T::AccountId>,
-		_marker: PhantomData<I>,
+		pub _marker: PhantomData<I>,
 	}
 
 	#[pallet::genesis_build]

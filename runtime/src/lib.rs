@@ -10,12 +10,15 @@ pub use crate::constants::*;
 use frame_system::EnsureRoot;
 use frame_support::traits::{ U128CurrencyToVote, LockIdentifier };
 use frame_support::PalletId;
-use pallet_babe::EpochChangeTrigger;
+use pallet_babe::ExternalTrigger;
 use pallet_grandpa::AuthorityId as GrandpaId;
+use pallet_transaction_payment::{ FeeDetails, RuntimeDispatchInfo };
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_api::impl_runtime_apis;
 use sp_staking::{ EraIndex, SessionIndex };
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
-use sp_consensus_babe::{ AuthorityId, Randomness, Slot, VrfSignature };
+use sp_inherents::{ CheckInherentsResult, InherentData };
 use sp_runtime::{
 	create_runtime_str,
 	generic,
@@ -29,7 +32,7 @@ use sp_runtime::{
 		One,
 		Verify,
 	},
-	transaction_validity::{ TransactionSource, TransactionValidity },
+	transaction_validity::{ TransactionSource, TransactionValidity, TransactionPriority },
 	ApplyExtrinsicResult,
 	MultiSignature,
 };
@@ -83,6 +86,14 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
+pub type Nonce = u32;
+pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
+/// The BABE epoch configuration at genesis.
+pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
+	sp_consensus_babe::BabeEpochConfiguration {
+		c: PRIMARY_PROBABILITY,
+		allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
+	};
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -98,11 +109,12 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
-	//todo[epic=staking] SessionKeys check to see if this needs to be changed in the PoS situation
 	impl_opaque_keys! {
 		pub struct SessionKeys {
 			pub babe: Babe,
 			pub grandpa: Grandpa,
+			pub im_online: ImOnline,
+			pub authority_discovery: AuthorityDiscovery,
 		}
 	}
 }
@@ -215,29 +227,73 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+impl pallet_offences::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+	type OnOffenceHandler = Staking;
+}
+parameter_types! {
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	/// We prioritize im-online heartbeats over election solution submission.
+	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+	pub const MaxKeys: u32 = 10_000;
+	pub const MaxPeerInHeartbeats: u32 = 10_000;
+	pub const MaxPeerDataEncodingSize: u32 = 1_000_000;
+}
+impl pallet_im_online::Config for Runtime {
+	type AuthorityId = ImOnlineId;
+	type RuntimeEvent = RuntimeEvent;
+	type NextSessionRotation = Babe;
+	type ValidatorSet = Historical;
+	type ReportUnresponsiveness = Offences;
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type MaxKeys = MaxKeys;
+	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
+}
+
 parameter_types! {
 	/// changing this value after genesis will brick chain
-	pub const EpochDuration: u64 = SESSIONS_PER_ERA;
+	pub const EpochDuration: u64 = SESSIONS_PER_ERA as u64;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
    pub ReportLongevity: u64 =
 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+   pub const MaxAuthorities: u32 = DESIRED_MEMBERS;
 }
+
+impl pallet_authority_discovery::Config for Runtime {
+	type MaxAuthorities = MaxAuthorities;
+}
+
 impl pallet_babe::Config for Runtime {
+	type MaxAuthorities = MaxAuthorities;
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
-	type EpochChangeTrigger = EpochChangeTrigger;
+	type EpochChangeTrigger = ExternalTrigger;
 	type DisabledValidators = Session;
-	type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<
+	type KeyOwnerProof = <Historical as KeyOwnerProofSystem<
 		(KeyTypeId, pallet_babe::AuthorityId)
 	>>::Proof;
+	type EquivocationReportSystem = pallet_babe::EquivocationReportSystem<
+		Self,
+		Offences,
+		Historical,
+		ReportLongevity
+	>;
 	type WeightInfo = ();
+}
+
+impl pallet_authorship::Config for Runtime {
+	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+	type EventHandler = (Staking, ImOnline);
 }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 
 	type WeightInfo = ();
-	type MaxAuthorities = ConstU32<27>;
+	type MaxAuthorities = MaxAuthorities;
 	type MaxSetIdSessionEntries = ConstU64<0>;
 
 	type KeyOwnerProof = sp_core::Void;
@@ -252,6 +308,11 @@ impl pallet_timestamp::Config for Runtime {
 	type OnTimestampSet = Babe;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime where RuntimeCall: From<C> {
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
 }
 
 parameter_types! {
@@ -397,7 +458,7 @@ impl pallet_session::Config for Runtime {
 	type SessionManager = SessionManager;
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = opaque::SessionKeys; //todo opaque::SessionKeys review for this
+	type Keys = opaque::SessionKeys;
 	type WeightInfo = ();
 }
 
@@ -499,6 +560,10 @@ construct_runtime!(
 		Timestamp: pallet_timestamp,
 		Babe: pallet_babe,
 		Grandpa: pallet_grandpa,
+      Offences: pallet_offences,
+      Authorship: pallet_authorship,
+      ImOnline: pallet_im_online,
+      AuthorityDiscovery: pallet_authority_discovery,
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
@@ -508,7 +573,7 @@ construct_runtime!(
       Collective: pallet_collective,
       Treasury: pallet_treasury,
       D9Treasury: pallet_d9_treasury,
-      Historical: pallet_session::historical
+      Historical: pallet_session::historical::{Pallet}
 	}
 );
 
@@ -620,7 +685,11 @@ impl_runtime_apis! {
 		}
 	}
 
-
+	impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
+		fn authorities() -> Vec<AuthorityDiscoveryId> {
+			AuthorityDiscovery::authorities()
+		}
+	}
    ///Grandpa API
 	impl sp_consensus_grandpa::GrandpaApi<Block> for Runtime {
 		fn grandpa_authorities() -> sp_consensus_grandpa::AuthorityList {
@@ -658,11 +727,6 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_staking_runtime_api::StakingApi<Block, Balance> for Runtime {
-		fn nominations_quota(balance: Balance) -> u32 {
-			Staking::api_nominations_quota(balance)
-		}
-	}
 
 	impl sp_consensus_babe::BabeApi<Block> for Runtime {
 		fn configuration() -> sp_consensus_babe::BabeConfiguration {
@@ -710,12 +774,6 @@ impl_runtime_apis! {
 				equivocation_proof,
 				key_owner_proof,
 			)
-		}
-	}
-
-	impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
-		fn authorities() -> Vec<AuthorityDiscoveryId> {
-			AuthorityDiscovery::authorities()
 		}
 	}
 
@@ -919,13 +977,13 @@ impl_runtime_apis! {
 
 	impl sp_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-			SessionKeys::generate(seed)
+			opaque::SessionKeys::generate(seed)
 		}
 
 		fn decode_session_keys(
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
-			SessionKeys::decode_into_raw_public_keys(&encoded)
+			opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
 		}
 	}
 
@@ -950,6 +1008,12 @@ impl_runtime_apis! {
 			Executive::try_execute_block(block, state_root_check, signature_check, select).unwrap()
 		}
 	}
+
+	// impl pallet_staking_runtime_api::StakingApi<Block, Balance> for Runtime {
+	// 	fn nominations_quota(balance: Balance) -> u32 {
+	// 		Staking::api_nominations_quota(balance)
+	// 	}
+	// }
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {

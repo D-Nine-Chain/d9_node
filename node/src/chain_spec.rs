@@ -14,9 +14,9 @@ use d9_node_runtime::{
 	WASM_BINARY,
 	CollectiveConfig,
 	TreasuryConfig,
+	AuthorityDiscoveryConfig,
 };
 use sc_service::ChainType;
-use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{ sr25519, Pair, Public };
 use sp_runtime::traits::{ IdentifyAccount, Verify };
@@ -134,7 +134,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		)
 	)
 }
-pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
@@ -158,11 +158,7 @@ fn testnet_genesis(
 		},
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(babe_primitives::EpochConfiguration {
-				c: PRIMARY_PROBABILITY,
-				_y: 0,
-				secondary_slots: true,
-			}),
+			epoch_config: Some(d9_node_runtime::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		grandpa: GrandpaConfig {
 			authorities: initial_authorities
@@ -202,6 +198,12 @@ fn testnet_genesis(
 		},
 		treasury: TreasuryConfig {
 			..Default::default()
+		},
+		im_online: ImOnlineConfig {
+			keys: vec![],
+		},
+		authority_discovery: AuthorityDiscoveryConfig {
+			keys: vec![],
 		},
 	}
 }

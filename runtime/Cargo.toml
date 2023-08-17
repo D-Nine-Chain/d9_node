@@ -90,6 +90,7 @@ std = [
    "pallet-timestamp/std",
    "pallet-transaction-payment-rpc-runtime-api/std",
    "pallet-transaction-payment/std",
+   "pallet-d9-treasury/std",
    "pallet-elections-phragmen/std",
    "sp-api/std",
    "sp-staking/std",

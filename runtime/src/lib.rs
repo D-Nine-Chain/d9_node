@@ -390,7 +390,7 @@ impl pallet_session::Config for Runtime {
 
 parameter_types! {
 	//note - MotionDuration constant may need to be changed to correspond to some other value, for now it will be 1 HOUR (hour in block time based on corresponding Blocks per hour )
-	pub const MotionDuration: BlockNumber = HOUR;
+	pub const MotionDuration: BlockNumber = WEEK;
 	pub const MaxMembers: u32 = 100;
 }
 impl pallet_collective::Config for Runtime {

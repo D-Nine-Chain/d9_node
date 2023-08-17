@@ -56,8 +56,8 @@ pub mod pallet {
 		OptionQuery
 	>;
 
-	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
+	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub treasurer: Option<T::AccountId>,
 		pub _marker: PhantomData<I>,

@@ -68,7 +68,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplier };
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{ Perbill, Permill };
+pub use sp_runtime::{ Perbill, Permill, transaction_validity::TransactionPriority };
 /// Import the template pallet.
 // pub use pallet_template;
 
@@ -109,6 +109,8 @@ pub mod opaque {
 		pub struct SessionKeys {
 			pub aura: Aura,
 			pub grandpa: Grandpa,
+			pub im_online: ImOnline,
+			pub authority_discovery: AuthorityDiscovery,
 		}
 	}
 }
@@ -369,6 +371,13 @@ impl pallet_session::historical::Config for Runtime {
 }
 
 parameter_types! {
+	pub const MaxAuthorities: u32 = DESIRED_MEMBERS;
+}
+impl pallet_authority_discovery::Config for Runtime {
+	type MaxAuthorities = MaxAuthorities;
+}
+
+parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
 	pub const Offset: BlockNumber = SESSION_OFFSET;
 }
@@ -407,6 +416,35 @@ impl pallet_collective::Config for Runtime {
 }
 
 parameter_types! {
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	pub const MaxKeys: u32 = DESIRED_MEMBERS + 10;
+	pub const MaxPeerInHeartbeats: u32 = DESIRED_MEMBERS + 10;
+	pub const MaxPeerDataEncodingSize: u32 = 1024;
+}
+impl pallet_im_online::Config for Runtime {
+	type AuthorityId = pallet_im_online::sr25519::AuthorityId;
+	type RuntimeEvent = RuntimeEvent;
+	type NextSessionRotation = PeriodicSessions;
+	type ValidatorSet = Historical;
+	type ReportUnresponsiveness = Offences;
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type MaxKeys = MaxKeys;
+	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
+}
+
+impl<T> frame_system::offchain::SendTransactionTypes<T> for Runtime where RuntimeCall: From<T> {
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
+impl pallet_offences::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+	type OnOffenceHandler = Staking;
+}
+
+parameter_types! {
 	pub const ElectionPalletId: LockIdentifier = *b"election";
 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
@@ -417,7 +455,6 @@ parameter_types! {
 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
 	pub const MaxVotesPerVoter: u32 = MAX_VOTES_PER_VOTER;
 }
-
 impl pallet_elections_phragmen::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
 	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
@@ -438,6 +475,7 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type MaxVotesPerVoter = MaxVotesPerVoter;
 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
 }
+
 parameter_types! {
 	pub const MaxSpendPerTransaction: Balance = 1 * ONE_MILLION_D9_TOKENS;
 }
@@ -456,22 +494,22 @@ parameter_types! {
 }
 //todo[epic=WeightInfo] manage the weightinfo, research and implement properly all that shit for the runtime pallets
 impl pallet_treasury::Config for Runtime {
-	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
 	type ApproveOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
-	type RejectOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
-	type OnSlash = Treasury;
-	type ProposalBond = ProposalBond;
-	type ProposalBondMinimum = ProposalBondMinimum;
-	type ProposalBondMaximum = ();
-	type PalletId = TreasuryPalletId;
 	type Burn = Burn;
-	type SpendPeriod = SpendPeriod;
 	type BurnDestination = ();
-	type WeightInfo = ();
-	type SpendFunds = ();
+	type Currency = Balances;
 	type MaxApprovals = ();
+	type OnSlash = Treasury;
+	type PalletId = TreasuryPalletId;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMaximum = ();
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type RejectOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
+	type RuntimeEvent = RuntimeEvent;
+	type SpendFunds = ();
 	type SpendOrigin = pallet_d9_treasury::EnsureTreasurerLimit<Runtime, ()>;
+	type SpendPeriod = SpendPeriod;
+	type WeightInfo = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -482,19 +520,23 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
+		Aura: pallet_aura,
+		Balances: pallet_balances,
+		Grandpa: pallet_grandpa,
+		Sudo: pallet_sudo,
 		System: frame_system,
 		Timestamp: pallet_timestamp,
-		Aura: pallet_aura,
-		Grandpa: pallet_grandpa,
-		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
-		Sudo: pallet_sudo,
+      AuthorityDiscovery: pallet_authority_discovery,
+      Collective: pallet_collective,
+      D9Treasury: pallet_d9_treasury,
+      Historical: pallet_session::historical,
+      ImOnline: pallet_im_online,
+      Offences: pallet_offences,
+      PhragmenElections: pallet_elections_phragmen,
       Session: pallet_session,
       Staking:pallet_staking,
-      PhragmenElections: pallet_elections_phragmen,
-      Collective: pallet_collective,
       Treasury: pallet_treasury,
-      D9Treasury: pallet_d9_treasury,
 	}
 );
 

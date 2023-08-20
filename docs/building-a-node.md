@@ -9,7 +9,7 @@ cargo build --release
 after completion can run:
 
 ```
-./target/release/node-template -h
+./target/release/d9-node -h
 ```
 
 to explore the parameters and subcommands of the node.

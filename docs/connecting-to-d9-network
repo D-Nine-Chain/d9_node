@@ -4,4 +4,56 @@
 
 - for rust setup details check [here](./rust-setup.md)
 
-- #todo add details on setting up the local network chain and testing it. e.g not the dev one the other one.
+from the root directory run this command to start a test local network:
+
+````bash
+
+```bash
+./target/debug/d9-node \
+--base-path /tmp/alice \
+--chain local \
+--alice \
+--port 30333 \
+--rpc-port 9945 \
+--node-key 0000000000000000000000000000000000000000000000000000000000000001 \
+--validator
+````
+
+a local network does not retain data.
+
+your output will start similiar to this:
+
+```bash
+2023-08-20 10:37:15 Substrate Node
+2023-08-20 10:37:15 ✌️  version 1.0.0-824df659d12
+2023-08-20 10:37:15 ❤️  by D9 dev team, 2023-2023
+2023-08-20 10:37:15 📋 Chain specification: local_d9
+2023-08-20 10:37:15 🏷  Node name: Alice
+2023-08-20 10:37:15 👤 Role: AUTHORITY
+2023-08-20 10:37:15 💾 Database: RocksDb at /tmp/alice/chains/local_d9/db/full
+2023-08-20 10:37:15 ⛓  Native runtime: d9-100 (d9-1.tx1.au1)
+2023-08-20 10:37:16 [0] 💸 generated 0 npos voters, 0 from validators and 0 nominators
+2023-08-20 10:37:16 [0] 💸 generated 0 npos targets
+2023-08-20 10:37:16 [0] 💸 generated 0 npos voters, 0 from validators and 0 nominators
+2023-08-20 10:37:16 [0] 💸 generated 0 npos targets
+2023-08-20 10:37:23 Using default protocol ID "sup" because none is configured in the chain specs
+2023-08-20 10:37:23 🏷  Local node identity is: 12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
+2023-08-20 10:37:23 💻 Operating system: macos
+2023-08-20 10:37:23 💻 CPU architecture: aarch64
+2023-08-20 10:37:23 📦 Highest known block at #0
+
+```
+
+copy the local node identity, in this case `12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp`
+and run the second node with the bootnode flag (make sure to use the previous node identity from the first node):
+
+```bash
+./target/debug/d9-node \
+--base-path /tmp/bob \
+--chain local \
+--bob \
+--port 30334 \
+--rpc-port 9946 \
+--validator \
+--bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
+```

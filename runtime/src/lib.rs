@@ -8,7 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
 pub use crate::constants::*;
 use frame_system::EnsureRoot;
-use frame_support::traits::{ U128CurrencyToVote, LockIdentifier };
+use frame_support::traits::{ U128CurrencyToVote, LockIdentifier, AsEnsureOriginWithArg };
 use frame_support::PalletId;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
@@ -289,6 +289,37 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 }
+parameter_types! {
+	pub const RemoveItemsLimit: u32 = 1000;
+	pub const AssetDeposit: Balance = 10 * ONE_MILLION_D9_TOKENS;
+	pub const ApprovalDeposit: Balance = 1 * D9_TOKEN;
+	pub const AssetAccountDeposit: Balance = 1 * D9_TOKEN;
+	pub const StringLimit: u32 = 20;
+	pub const MetadataDepositBase: Balance = 10 * ONE_THOUSAND_D9_TOKENS;
+	pub const MetadataDepositPerByte: Balance = 1000 * D9_TOKEN;
+}
+impl pallet_assets::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = u32;
+	type AssetIdParameter = codec::Compact<u32>;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type CallbackHandle = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type RemoveItemsLimit = RemoveItemsLimit;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
 
 parameter_types! {
 	pub const MaxWinners: u32 = DESIRED_MEMBERS;
@@ -564,6 +595,7 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
+      Assets:pallet_assets,
 		Aura: pallet_aura,
 		Balances: pallet_balances,
 		Grandpa: pallet_grandpa,

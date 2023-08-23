@@ -111,3 +111,11 @@ pub const OFFENDING_VALIDATORS_THRESHOLD: Perbill = Perbill::from_percent(30);
 /// Therefore, any change to `MAX_UNLOCKING_CHUNKS`, particularly a decrease, should be handled
 /// via a carefully managed runtime migration.
 pub const MAX_UNLOCKING_CHUNKS: u32 = 15;
+
+//contracts
+pub const DEPOSIT_PER_ITEM: Balance = 20_000;
+pub const DEPOSIT_PER_BYTE: Balance = 1_000;
+pub const DEFAULT_DEPOSIT_LIMIT: Balance = 3 * D9_TOKEN;
+pub const MAX_CODE_SIZE: u32 = 500 * 1024;
+pub const MAX_STORAGE_KEY_LENGTH: u32 = 128;
+pub const MAX_DEBUG_BUFFER_LENGTH: u32 = 2 * 1024 * 1024;

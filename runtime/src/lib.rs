@@ -587,6 +587,21 @@ impl pallet_contracts::Config for Runtime {
 	#[cfg(feature = "runtime-benchmarks")]
 	type Migrations = (NoopMigration<1>, NoopMigration<2>);
 }
+
+parameter_types! {
+	pub const DepositBase: Balance = 1 * D9_TOKEN;
+	pub const DepositFactor: Balance = 1 * D9_TOKEN;
+	pub const MaxSignatories: u32 = 100;
+}
+impl pallet_multisig::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+}
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -602,6 +617,7 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		System: frame_system,
 		Timestamp: pallet_timestamp,
+		MultiSig: pallet_multisig,
 		TransactionPayment: pallet_transaction_payment,
       AuthorityDiscovery: pallet_authority_discovery,
       Collective: pallet_collective,

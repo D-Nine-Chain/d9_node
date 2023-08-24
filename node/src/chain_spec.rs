@@ -1,21 +1,22 @@
 use d9_node_runtime::{
 	AccountId,
+	AssetsConfig,
 	AuraConfig,
+	AuthorityDiscoveryConfig,
 	BalancesConfig,
+	CollectiveConfig,
+	D9TreasuryConfig,
 	GenesisConfig,
 	GrandpaConfig,
-	Signature,
-	SudoConfig,
-	SessionConfig,
-	StakingConfig,
-	PhragmenElectionsConfig,
-	D9TreasuryConfig,
-	SystemConfig,
-	WASM_BINARY,
-	CollectiveConfig,
-	TreasuryConfig,
 	ImOnlineConfig,
-	AuthorityDiscoveryConfig,
+	PhragmenElectionsConfig,
+	SessionConfig,
+	Signature,
+	StakingConfig,
+	SudoConfig,
+	SystemConfig,
+	TreasuryConfig,
+	WASM_BINARY,
 	opaque::SessionKeys,
 };
 use sc_service::ChainType;
@@ -214,6 +215,9 @@ fn testnet_genesis(
 	_enable_println: bool
 ) -> GenesisConfig {
 	GenesisConfig {
+		assets: AssetsConfig {
+			..Default::default()
+		},
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),

@@ -25,7 +25,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
-
+	//73chn1c41/5h1b80137h
 	#[pallet::config]
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		type Balance: Parameter +

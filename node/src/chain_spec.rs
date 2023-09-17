@@ -3,7 +3,8 @@ use d9_node_runtime::{
 	AssetsConfig,
 	AuraConfig,
 	AuthorityDiscoveryConfig,
-	BalancesConfig,
+	D9BalancesConfig,
+	D9ReferralConfig,
 	CollectiveConfig,
 	D9TreasuryConfig,
 	GenesisConfig,
@@ -222,7 +223,10 @@ fn testnet_genesis(
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
 		},
-		balances: BalancesConfig {
+		d9_referral: D9ReferralConfig {
+			..Default::default()
+		},
+		d9_balances: D9BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()

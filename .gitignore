@@ -11,3 +11,4 @@
 .direnv
 .vscode
 .idea
+**/dev_chain_state

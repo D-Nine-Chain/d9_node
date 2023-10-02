@@ -7,8 +7,8 @@ local-bob:
 
 .PHONY: dev-alice
 dev-alice:
-	./target/debug/d9-node --base-path ./dev_chain-state --chain dev --alice --port 30333 --ws-port 9944 --rpc-port 9933 --node-key 0000000000000000000000000000000000000000000000000000000000000000 --validator
+	./target/debug/d9-node --base-path ./dev_chain_state --chain dev --alice --port 30333 --ws-port 9944 --rpc-port 9933 --node-key 0000000000000000000000000000000000000000000000000000000000000000 --validator
 
 .PHONY: dev-bob
 dev-bob:
-	./target/debug/d9-node --base-path ./dev_chain-state --chain dev --bob --port 30333 --ws-port 9944 --rpc-port 9933 --node-key 0000000000000000000000000000000000000000000000000000000000000001 --validator -
+	./target/debug/d9-node --base-path ./dev_chain_state --chain dev --bob --port 30333 --ws-port 9944 --rpc-port 9933 --node-key 0000000000000000000000000000000000000000000000000000000000000001 --validator -

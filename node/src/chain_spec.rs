@@ -126,13 +126,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Sudo account
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash")
-					],
+					vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
 					true
 				)
 			},

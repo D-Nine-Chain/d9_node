@@ -6,17 +6,29 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
+use sp_core::crypto::UncheckedFrom;
 pub use crate::constants::*;
 use frame_system::EnsureRoot;
 use frame_support::traits::{ U128CurrencyToVote, LockIdentifier, AsEnsureOriginWithArg };
 use frame_support::PalletId;
+use frame_support::pallet_prelude::{ Encode, Decode, RuntimeDebug };
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_staking::{ EraIndex, SessionIndex };
 use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
+use sp_runtime::DispatchError;
+use frame_support::log::error;
 #[cfg(feature = "runtime-benchmarks")]
 use pallet_contracts::NoopMigration;
+use pallet_contracts::chain_extension::{
+	ChainExtension,
+	Environment,
+	Ext,
+	InitState,
+	RetVal,
+	SysConfig,
+};
 use sp_runtime::{
 	create_runtime_str,
 	generic,
@@ -40,6 +52,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use frame_election_provider_support::{ onchain, SequentialPhragmen };
 // A few exports that help ease life for downstream crates.
+
 pub use frame_support::{
 	construct_runtime,
 	parameter_types,
@@ -67,7 +80,7 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use frame_system::Call as SystemCall;
-pub use pallet_balances::Call as BalancesCall;
+pub use pallet_d9_balances::Call as D9BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplier };
 #[cfg(any(feature = "std", test))]
@@ -164,7 +177,7 @@ parameter_types! {
 		);
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub const SS58Prefix: u8 = 42;
+	pub const SS58Prefix: u8 = 9;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -210,7 +223,7 @@ impl frame_system::Config for Runtime {
 	/// What to do if an account is fully reaped from the system.
 	type OnKilledAccount = ();
 	/// The data to be stored in an account.
-	type AccountData = pallet_balances::AccountData<Balance>;
+	type AccountData = pallet_d9_balances::AccountData<Balance>;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
@@ -246,19 +259,45 @@ impl pallet_timestamp::Config for Runtime {
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
 }
+parameter_types! {
+	pub const MaxReferralDepth: u32 = 19;
+}
+impl pallet_d9_referral::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxReferralDepth = MaxReferralDepth;
+	type SetMaxReferralDepthOrigin = pallet_collective::EnsureProportionAtLeast<
+		AccountId,
+		(),
+		1,
+		2
+	>;
+}
 
+impl pallet_d9_balances::ReferralManager<Runtime, ()> for Runtime {
+	fn get_parent(account: &AccountId) -> Option<AccountId> {
+		pallet_d9_referral::Pallet::<Runtime>::get_parent(account)
+	}
+
+	fn create_referral_relationship(parent: &AccountId, child: &AccountId) {
+		let _ = pallet_d9_referral::Pallet::<Runtime>::create_referral_relationship(parent, child);
+	}
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+pub struct SomeIdentifier(pub [u8; 4]);
 parameter_types! {
 	pub const MaxLocks: u32 = 50;
 	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
-	pub const ReserveIdentifier: &'static [u8; 7] = b"reserve";
+	pub const ReserveIdentifier: SomeIdentifier = SomeIdentifier(*b"rsrv");
+	pub const FreezeIdentifier: SomeIdentifier = SomeIdentifier(*b"frze");
 	pub const MaxHolds: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 	pub const MaxFreezes: u32 = 50;
-	pub const HoldIdentifier: &'static [u8; 4] = b"hold";
+	pub const HoldIdentifier: SomeIdentifier = SomeIdentifier(*b"hold");
 }
-impl pallet_balances::Config for Runtime {
+impl pallet_d9_balances::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_d9_balances::weights::SubstrateWeight<Runtime>;
 	type Balance = Balance;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
@@ -270,6 +309,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = MaxReserves;
 	type MaxFreezes = MaxFreezes;
 	type HoldIdentifier = ();
+	type ReferralManager = Self;
 }
 
 parameter_types! {
@@ -278,7 +318,7 @@ parameter_types! {
 }
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = CurrencyAdapter<D9Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
@@ -303,7 +343,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = u32;
 	type AssetIdParameter = codec::Compact<u32>;
-	type Currency = Balances;
+	type Currency = D9Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
@@ -371,7 +411,7 @@ impl onchain::Config for OnChainSeqPhragmen {
 }
 
 impl pallet_staking::Config for Runtime {
-	type Currency = Balances;
+	type Currency = D9Balances;
 	type CurrencyBalance = Balance;
 	type MaxNominations = MaxNominations;
 	type UnixTime = Timestamp;
@@ -493,7 +533,7 @@ parameter_types! {
 impl pallet_elections_phragmen::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
 	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
-	type Currency = Balances; // The currency used for transactions within this pallet (like candidacy bonds).
+	type Currency = D9Balances; // The currency used for transactions within this pallet (like candidacy bonds).
 	type ChangeMembers = Collective; // The type which should be informed of changes to the set of elected members.
 	type InitializeMembers = Collective; // The type that sets the initial membership set, usually implemented by the session manager.
 	type CurrencyToVote = U128CurrencyToVote; // Used for converting balances to a vote weight for nuanced voting algorithms.
@@ -518,7 +558,7 @@ impl pallet_d9_treasury::Config for Runtime {
 	type Balance = Balance;
 	type MaxSpendPerTransaction = MaxSpendPerTransaction;
 	type RuntimeEvent = RuntimeEvent;
-	type Currency = Balances;
+	type Currency = D9Balances;
 }
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(10);
@@ -532,7 +572,7 @@ impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 	type Burn = Burn;
 	type BurnDestination = ();
-	type Currency = Balances;
+	type Currency = D9Balances;
 	type MaxApprovals = ();
 	type OnSlash = Treasury;
 	type PalletId = TreasuryPalletId;
@@ -546,7 +586,49 @@ impl pallet_treasury::Config for Runtime {
 	type SpendPeriod = SpendPeriod;
 	type WeightInfo = ();
 }
+
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
+#[derive(Default)]
+pub struct D9ChainExtension;
+
+impl ChainExtension<Runtime> for D9ChainExtension {
+	fn call<E>(
+		&mut self,
+		env: Environment<E, InitState>
+	)
+		-> pallet_contracts::chain_extension::Result<RetVal>
+		where
+			E: Ext<T = Runtime>,
+			<E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>
+	{
+		let mut env = env.buf_in_buf_out();
+		let func_id = env.func_id();
+
+		match func_id {
+			0 => {
+				let account: AccountId = env.read_as()?;
+				let parent = pallet_d9_referral::Pallet::<Runtime>::get_parent(&account);
+				let parent_bytes = parent.encode();
+				let _ = env.write(&parent_bytes, false, None);
+			}
+			1 => {
+				let account = env.read_as()?;
+				let ancestors = pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account);
+				let ancestors_bytes = ancestors.encode();
+				let _ = env.write(&ancestors_bytes, false, None);
+			}
+			_ => {
+				error!("Called an unregistered `func_id`: {:}", func_id);
+				return Err(DispatchError::Other("Unimplemented func_id"));
+			}
+		}
+		Ok(RetVal::Converging(0))
+	}
+
+	fn enabled() -> bool {
+		true
+	}
+}
 parameter_types! {
 	pub const DepositPerItem: Balance = DEPOSIT_PER_ITEM   ;
 	pub const DepositPerByte: Balance = DEPOSIT_PER_BYTE;
@@ -559,7 +641,7 @@ parameter_types! {
 impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
-	type Currency = Balances;
+	type Currency = D9Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	/// The safest default is to allow no calls at all.
@@ -571,7 +653,7 @@ impl pallet_contracts::Config for Runtime {
 	type CallFilter = Nothing;
 	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 	type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-	type ChainExtension = ();
+	type ChainExtension = D9ChainExtension;
 	type Schedule = Schedule;
 	type CallStack = [pallet_contracts::Frame<Self>; 5];
 	type DepositPerByte = DepositPerByte;
@@ -596,7 +678,7 @@ parameter_types! {
 impl pallet_multisig::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
-	type Currency = Balances;
+	type Currency = D9Balances;
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
@@ -610,19 +692,20 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-      Assets:pallet_assets,
 		Aura: pallet_aura,
-		Balances: pallet_balances,
+      D9Referral:pallet_d9_referral,
+      D9Treasury: pallet_d9_treasury,
+		D9Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
+		MultiSig: pallet_multisig,
 		Sudo: pallet_sudo,
 		System: frame_system,
 		Timestamp: pallet_timestamp,
-		MultiSig: pallet_multisig,
 		TransactionPayment: pallet_transaction_payment,
+      Assets:pallet_assets,
       AuthorityDiscovery: pallet_authority_discovery,
       Collective: pallet_collective,
       Contracts:pallet_contracts,
-      D9Treasury: pallet_d9_treasury,
       Historical: pallet_session::historical,
       ImOnline: pallet_im_online,
       Offences: pallet_offences,
@@ -679,7 +762,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
 		[frame_system, SystemBench::<Runtime>]
-		[pallet_balances, Balances]
+		[pallet_d9_balances, D9Balances]
 		[pallet_timestamp, Timestamp]
 		// [pallet_template, TemplateModule]
 	);

@@ -56,7 +56,7 @@ pub const STAKING_ID: LockIdentifier = *b"staking/";
 /// Unique identifier for locks related to elections.
 pub const ELECTION_LOCK: LockIdentifier = *b"election";
 /// Desired number of members for the validator set.
-pub const DESIRED_MEMBERS: u32 = 19;
+pub const DESIRED_MEMBERS: u32 = 27;
 /// Desired number of backup candidates or runners-up.
 pub const DESIRED_RUNNERS_UP: u32 = 100;
 /// max N of electable validators

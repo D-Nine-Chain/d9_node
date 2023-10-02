@@ -3,7 +3,8 @@ use d9_node_runtime::{
 	AssetsConfig,
 	AuraConfig,
 	AuthorityDiscoveryConfig,
-	BalancesConfig,
+	D9BalancesConfig,
+	D9ReferralConfig,
 	CollectiveConfig,
 	D9TreasuryConfig,
 	GenesisConfig,
@@ -125,13 +126,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Sudo account
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash")
-					],
+					vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
 					true
 				)
 			},
@@ -222,7 +217,10 @@ fn testnet_genesis(
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
 		},
-		balances: BalancesConfig {
+		d9_referral: D9ReferralConfig {
+			..Default::default()
+		},
+		d9_balances: D9BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()

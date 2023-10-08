@@ -56,7 +56,7 @@ After=network-online.target
 
 [Service]
 User=$SUDO_USER  
-ExecStart=$D9_NODE_PATH --base-path $CHAIN_DATA_PATH --chain $CHAIN_SPEC_PATH --port $P2P_PORT $VALIDATOR_FLAG$ACCEPT_EXTERNAL_FLAG --node-key --name $NODE_NAME
+ExecStart=$D9_NODE_PATH --base-path $CHAIN_DATA_PATH --chain $CHAIN_SPEC_PATH --port $P2P_PORT $VALIDATOR_FLAG$ACCEPT_EXTERNAL_FLAG --name $NODE_NAME
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=4096

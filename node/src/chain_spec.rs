@@ -3,7 +3,7 @@ use d9_node_runtime::{
 	AssetsConfig,
 	AuraConfig,
 	AuthorityDiscoveryConfig,
-	D9BalancesConfig,
+	BalancesConfig,
 	D9ReferralConfig,
 	CollectiveConfig,
 	D9TreasuryConfig,
@@ -28,6 +28,7 @@ use sp_runtime::traits::{ IdentifyAccount, Verify };
 use sp_runtime::Perbill;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use sc_chain_spec::Properties;
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -106,7 +107,10 @@ fn session_keys(
 
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "D9".into());
+	properties.insert("tokenDecimals".into(), (12).into());
+	properties.insert("ss58Format".into(), (9).into());
 	Ok(
 		ChainSpec::from_genesis(
 			// Name
@@ -126,7 +130,10 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Sudo account
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					// Pre-funded accounts
-					vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
+					vec![
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_account_id_from_seed::<sr25519::Public>("Charlie")
+					],
 					true
 				)
 			},
@@ -135,10 +142,11 @@ pub fn development_config() -> Result<ChainSpec, String> {
 			// Telemetry
 			None,
 			// Protocol ID
-			Some("dev_d9"),
+			Some("dev_D9"),
+			//fork ID
 			Some("dev_d9_original"),
 			// Properties
-			None,
+			Some(properties),
 			// Extensions
 			None
 		)
@@ -220,7 +228,7 @@ fn testnet_genesis(
 		d9_referral: D9ReferralConfig {
 			..Default::default()
 		},
-		d9_balances: D9BalancesConfig {
+		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()

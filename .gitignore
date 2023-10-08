@@ -12,3 +12,4 @@
 .vscode
 .idea
 **/dev_chain_state
+**/tmp

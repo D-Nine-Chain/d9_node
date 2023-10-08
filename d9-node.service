@@ -1,0 +1,13 @@
+[Unit]
+Description=D9 Node
+After=network-online.target
+
+[Service]
+User=yvanfatal  
+ExecStart=/Volumes/deeper_sink/projects/substrate/d9_node/target/release/d9_node --base-path /Volumes/deeper_sink/projects/substrate/d9_node/chain_state --chain /Volumes/deeper_sink/projects/substrate/d9_node/d9_chain_spec.json --port 49191 --rpc-port 49292 --ws-port 49393    --rpc-external --ws-external --ws-max-connections 1000 --rpc-cors all --node-key --name Alice
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

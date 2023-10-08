@@ -80,7 +80,7 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use frame_system::Call as SystemCall;
-pub use pallet_d9_balances::Call as D9BalancesCall;
+pub use pallet_d9_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplier };
 #[cfg(any(feature = "std", test))]
@@ -318,7 +318,7 @@ parameter_types! {
 }
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<D9Balances, ()>;
+	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
@@ -343,7 +343,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = u32;
 	type AssetIdParameter = codec::Compact<u32>;
-	type Currency = D9Balances;
+	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
@@ -411,7 +411,7 @@ impl onchain::Config for OnChainSeqPhragmen {
 }
 
 impl pallet_staking::Config for Runtime {
-	type Currency = D9Balances;
+	type Currency = Balances;
 	type CurrencyBalance = Balance;
 	type MaxNominations = MaxNominations;
 	type UnixTime = Timestamp;
@@ -533,7 +533,7 @@ parameter_types! {
 impl pallet_elections_phragmen::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
 	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
-	type Currency = D9Balances; // The currency used for transactions within this pallet (like candidacy bonds).
+	type Currency = Balances; // The currency used for transactions within this pallet (like candidacy bonds).
 	type ChangeMembers = Collective; // The type which should be informed of changes to the set of elected members.
 	type InitializeMembers = Collective; // The type that sets the initial membership set, usually implemented by the session manager.
 	type CurrencyToVote = U128CurrencyToVote; // Used for converting balances to a vote weight for nuanced voting algorithms.
@@ -558,7 +558,7 @@ impl pallet_d9_treasury::Config for Runtime {
 	type Balance = Balance;
 	type MaxSpendPerTransaction = MaxSpendPerTransaction;
 	type RuntimeEvent = RuntimeEvent;
-	type Currency = D9Balances;
+	type Currency = Balances;
 }
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(10);
@@ -572,7 +572,7 @@ impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = pallet_d9_treasury::EnsureTreasurer<Runtime, ()>;
 	type Burn = Burn;
 	type BurnDestination = ();
-	type Currency = D9Balances;
+	type Currency = Balances;
 	type MaxApprovals = ();
 	type OnSlash = Treasury;
 	type PalletId = TreasuryPalletId;
@@ -641,7 +641,7 @@ parameter_types! {
 impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
-	type Currency = D9Balances;
+	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	/// The safest default is to allow no calls at all.
@@ -678,7 +678,7 @@ parameter_types! {
 impl pallet_multisig::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
-	type Currency = D9Balances;
+	type Currency = Balances;
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
@@ -695,7 +695,7 @@ construct_runtime!(
 		Aura: pallet_aura,
       D9Referral:pallet_d9_referral,
       D9Treasury: pallet_d9_treasury,
-		D9Balances: pallet_d9_balances,
+		Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
 		MultiSig: pallet_multisig,
 		Sudo: pallet_sudo,
@@ -762,7 +762,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
 		[frame_system, SystemBench::<Runtime>]
-		[pallet_d9_balances, D9Balances]
+		[pallet_d9_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		// [pallet_template, TemplateModule]
 	);

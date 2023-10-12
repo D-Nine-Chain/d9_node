@@ -769,6 +769,7 @@ mod benches {
 }
 
 impl_runtime_apis! {
+
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION
@@ -1072,6 +1073,14 @@ impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash
 			)
 		}
 	}
+      impl runtime_api::ReferralRuntimeApi<Block, AccountId> for Runtime{
+      fn get_parent(account: AccountId) -> Option<AccountId> {
+         pallet_d9_referral::Pallet::<Runtime>::get_parent(&account)
+      }
+      fn get_ancestors(account:AccountId)->Option<Vec<AccountId>>{
+         pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account)
+      }
+   }
 }
 
 #[cfg(test)]

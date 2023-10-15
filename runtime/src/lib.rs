@@ -714,6 +714,8 @@ construct_runtime!(
       Session: pallet_session,
       Staking:pallet_staking,
       Treasury: pallet_treasury,
+      // PalletContractsRPCRuntimeAPI: pallet_contracts_rpc_runtime_api,
+      //   PalletContractsRPC: pallet_contracts_rpc,
 	}
 );
 
@@ -1001,7 +1003,7 @@ impl_runtime_apis! {
 			Executive::try_execute_block(block, state_root_check, signature_check, select).expect("execute-block failed")
 		}
 	}
-
+   	
 impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime
 	{
 		fn call(
@@ -1081,6 +1083,8 @@ impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash
          pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account)
       }
    }
+
+   
 }
 
 #[cfg(test)]

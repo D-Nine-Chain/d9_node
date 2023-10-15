@@ -92,3 +92,8 @@ impl<C, Block, AccountId> ReferralApiServer<<Block as BlockT>::Hash, AccountId>
 fn map_err(error: impl ToString, desc: &'static str) -> CallError {
 	CallError::Custom(ErrorObject::owned(Error::RuntimeError.into(), desc, Some(error.to_string())))
 }
+// pub fn owned<S: Serialize>(
+//     code: i32,
+//     message: impl Into<String>,
+//     data: Option<S>
+// ) -> ErrorObject<'static>

@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use d9_node_runtime::{ opaque::Block, AccountId, Balance, Index };
+use d9_node_runtime::{ opaque::Block, AccountId, Balance, Index, BlockNumber, Hash };
 
 use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
@@ -36,6 +36,7 @@ pub fn create_full<C, P>(
 		C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
 		C: Send + Sync + 'static,
 		C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+		C::Api: pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>,
 		C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 		C::Api: runtime_api::ReferralRuntimeApi<Block, AccountId>,
 		C::Api: BlockBuilder<Block>,
@@ -44,9 +45,11 @@ pub fn create_full<C, P>(
 	use pallet_transaction_payment_rpc::{ TransactionPayment, TransactionPaymentApiServer };
 	use substrate_frame_rpc_system::{ System, SystemApiServer };
 	use rpc_api::referral::{ Referral, ReferralApiServer };
+	use rpc_api::contracts::{ Contracts, ContractsApiServer };
 	let mut io: RpcModule<()> = RpcModule::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
-
+	// io.merge(ContractsRpc::new(client.clone()).into_rpc())?;
+	io.merge(Contracts::new(client.clone()).into_rpc())?;
 	io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	io.merge(Referral::new(client).into_rpc())?;

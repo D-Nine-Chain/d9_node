@@ -15,6 +15,9 @@ pub trait ReferralApi<BlockHash> {
 	#[method(name = "referral_getParent")]
 	fn get_parent(&self) -> RpcResult<u8>;
 
+	#[method(name = "referral_getParent")]
+	fn get_direct_referral_count(&self, account: AccountId) -> RpcResult<u32>;
+
 	// #[method(name = "referral_getAncestors")]
 	// fn get_ancestors(
 	// 	&self,
@@ -67,6 +70,11 @@ impl<C, Block> ReferralApiServer<<Block as BlockT>::Hash>
 		Ok(maybe_parent)
 	}
 
+	fn get_direct_referral_count(&self, account: AccountId) -> RpcResult<u32> {
+		let api = self.client.runtime_api();
+		let at = self.client.info().best_hash;
+		api.get_direct_referral_count(at, account)
+	}
 	// fn get_ancestors(
 	// 	&self,
 	// 	account: AccountId,

@@ -20,6 +20,13 @@ pub trait ReferralApi<BlockHash, AccountId> {
 		account: AccountId,
 		at: Option<BlockHash>
 	) -> RpcResult<Option<Vec<AccountId>>>;
+
+	#[method(name = "getDirectReferralCount")]
+	fn get_direct_referral_count(
+		&self,
+		account: AccountId,
+		at: Option<BlockHash>
+	) -> RpcResult<u32>;
 }
 
 pub struct Referral<C, P> {
@@ -72,6 +79,19 @@ impl<C, Block, AccountId> ReferralApiServer<<Block as BlockT>::Hash, AccountId>
 			.map_err(|e| map_err(e, "Unable to query dispatch info."))?;
 
 		Ok(maybe_parent)
+	}
+
+	fn get_direct_referral_count(
+		&self,
+		account: AccountId,
+		at: Option<<Block as BlockT>::Hash>
+	) -> RpcResult<u32> {
+		let api = self.client.runtime_api();
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		let count = api
+			.get_direct_referral_count(at, account)
+			.map_err(|e| map_err(e, "Unable to get count"))?;
+		Ok(count)
 	}
 
 	fn get_ancestors(

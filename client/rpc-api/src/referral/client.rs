@@ -42,6 +42,19 @@ impl<C, Block, AccountId> ReferralApiServer<AccountId>
 		Ok(maybe_parent)
 	}
 
+	fn get_direct_referral_count(
+		&self,
+		account: AccountId,
+		at: Option<<Block as BlockT>::Hash>
+	) -> RpcResult<u32> {
+		let api = self.client.runtime_api();
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		let count = api
+			.get_direct_referral_count(at, account)
+			.map_err(|e| map_err(e, "Unable to get count"))?;
+		Ok(count)
+	}
+
 	fn get_ancestors(&self, account: AccountId) -> RpcResult<Option<Vec<AccountId>>> {
 		let api = self.client.runtime_api();
 		let at_block = self.client.info().best_hash as <Block as BlockT>::Hash;

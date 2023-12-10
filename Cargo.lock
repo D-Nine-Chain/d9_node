@@ -4926,7 +4926,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-balances"
 version = "0.2.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#999fb0d1f7bdc4003aabf1103e4a021ff20b3b6f"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#f8c7916a983e25703be44d160184019e248529a6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4942,7 +4942,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-referral"
 version = "0.1.0-dev"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#999fb0d1f7bdc4003aabf1103e4a021ff20b3b6f"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#f8c7916a983e25703be44d160184019e248529a6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4961,7 +4961,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-treasury"
 version = "0.1.0-dev"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#999fb0d1f7bdc4003aabf1103e4a021ff20b3b6f"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#f8c7916a983e25703be44d160184019e248529a6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

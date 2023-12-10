@@ -144,7 +144,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 100,
+	spec_version: 105,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -393,7 +393,7 @@ parameter_types! {
 pub struct StakingBenchmarkingConfig;
 impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 	type MaxNominators = ConstU32<1000>;
-	type MaxValidators = ConstU32<1000>;
+	type MaxValidators = ConstU32<27>;
 }
 pub struct OnChainSeqPhragmen;
 impl onchain::Config for OnChainSeqPhragmen {
@@ -613,9 +613,24 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 			}
 			1 => {
 				let account = env.read_as()?;
-				let ancestors = pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account);
-				let ancestors_bytes = ancestors.encode();
+				let maybe_ancestors = pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account);
+				let ancestors_bytes = maybe_ancestors.encode();
 				let _ = env.write(&ancestors_bytes, false, None);
+			}
+			2 => {
+				let validators = pallet_session::Pallet::<Runtime>::validators();
+				let validators_bytes = validators.encode();
+				let _ = env.write(&validators_bytes, false, None);
+			}
+			3 => {
+				let candidates_and_amount =
+					pallet_elections_phragmen::Pallet::<Runtime>::candidates();
+				let just_candidate_ids: Vec<AccountId> = candidates_and_amount
+					.into_iter()
+					.map(|(account_id, _)| account_id)
+					.collect();
+				let candidates_bytes = just_candidate_ids.encode();
+				let _ = env.write(&candidates_bytes, false, None);
 			}
 			_ => {
 				error!("Called an unregistered `func_id`: {:}", func_id);
@@ -1079,6 +1094,9 @@ impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash
       }
       fn get_ancestors(account:AccountId)->Option<Vec<AccountId>>{
          pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account)
+      }
+      fn get_direct_referral_count(account:AccountId)->u32{
+         pallet_d9_referral::Pallet::<Runtime>::get_direct_referral_count(account)
       }
    }
 }

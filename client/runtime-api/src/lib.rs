@@ -6,5 +6,6 @@ sp_api::decl_runtime_apis! {
 	pub trait ReferralRuntimeApi<AccountId> where AccountId: Codec {
 		fn get_parent(account: AccountId) -> Option<AccountId>;
 		fn get_ancestors(account: AccountId) -> Option<Vec<AccountId>>;
+		fn get_direct_referral_count(account: AccountId) -> u32;
 	}
 }

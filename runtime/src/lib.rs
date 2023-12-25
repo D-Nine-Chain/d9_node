@@ -144,7 +144,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 105,
+	spec_version: 106,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -632,6 +632,13 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 				let candidates_bytes = just_candidate_ids.encode();
 				let _ = env.write(&candidates_bytes, false, None);
 			}
+
+			4 => {
+				let session = pallet_session::Pallet::<Runtime>::current_index();
+				let session_bytes = session.encode();
+				let _ = env.write(&session_bytes, false, None);
+			}
+
 			_ => {
 				error!("Called an unregistered `func_id`: {:}", func_id);
 				return Err(DispatchError::Other("Unimplemented func_id"));

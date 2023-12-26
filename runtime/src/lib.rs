@@ -9,7 +9,7 @@ pub mod constants;
 use sp_core::crypto::UncheckedFrom;
 pub use crate::constants::*;
 use frame_system::EnsureRoot;
-use frame_support::traits::{ U128CurrencyToVote, LockIdentifier, AsEnsureOriginWithArg };
+use frame_support::traits::AsEnsureOriginWithArg;
 use frame_support::PalletId;
 use frame_support::pallet_prelude::{ Encode, Decode, RuntimeDebug };
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -50,7 +50,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-use frame_election_provider_support::{ onchain, SequentialPhragmen };
+// use frame_election_provider_support::{ onchain, SequentialPhragmen };
 // A few exports that help ease life for downstream crates.
 
 pub use frame_support::{
@@ -361,21 +361,21 @@ impl pallet_assets::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
-parameter_types! {
-	pub const MaxWinners: u32 = DESIRED_MEMBERS;
-	pub const TargetsBound: u32 = DESIRED_RUNNERS_UP;
-}
-// type Solver = frame_election_provider_support::SequentialPhragmen<AccountId, Perbill>;
-impl frame_election_provider_support::onchain::Config for Runtime {
-	// type System = frame_system::Pallet<Runtime>;
-	type System = Runtime;
-	type Solver = SequentialPhragmen<AccountId, Perbill>;
-	type DataProvider = Staking;
-	type WeightInfo = ();
-	type MaxWinners = MaxWinners;
-	type VotersBound = ();
-	type TargetsBound = TargetsBound;
-}
+// parameter_types! {
+// 	pub const MaxWinners: u32 = DESIRED_MEMBERS;
+// 	pub const TargetsBound: u32 = DESIRED_RUNNERS_UP;
+// }
+// // type Solver = frame_election_provider_support::SequentialPhragmen<AccountId, Perbill>;
+// impl frame_election_provider_support::onchain::Config for Runtime {
+// 	// type System = frame_system::Pallet<Runtime>;
+// 	type System = Runtime;
+// 	type Solver = SequentialPhragmen<AccountId, Perbill>;
+// 	type DataProvider = Staking;
+// 	type WeightInfo = ();
+// 	type MaxWinners = MaxWinners;
+// 	type VotersBound = ();
+// 	type TargetsBound = TargetsBound;
+// }
 
 parameter_types! {
 	pub const SessionsPerEra: SessionIndex = SESSIONS_PER_ERA;
@@ -390,82 +390,94 @@ parameter_types! {
 	pub const MaxOnChainElectingVoters: u32 = MAX_ON_CHAIN_ELECTING_VOTERS;
 	pub const MaxOnChainElectableTargets: u32 = MAX_ON_CHAIN_ELECTABLE_TARGETS;
 }
-pub struct StakingBenchmarkingConfig;
-impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
-	type MaxNominators = ConstU32<1000>;
-	type MaxValidators = ConstU32<1000>;
-}
-pub struct OnChainSeqPhragmen;
-impl onchain::Config for OnChainSeqPhragmen {
-	type System = Runtime;
-	type Solver = SequentialPhragmen<
-		AccountId,
-		Perbill
-		// pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>
-	>;
-	type DataProvider = Staking;
-	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
-	type MaxWinners = <Runtime as pallet_elections_phragmen::Config>::DesiredMembers;
-	type VotersBound = MaxOnChainElectingVoters;
-	type TargetsBound = MaxOnChainElectableTargets;
-}
+// pub struct StakingBenchmarkingConfig;
+// impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
+// 	type MaxNominators = ConstU32<1000>;
+// 	type MaxValidators = ConstU32<1000>;
+// }
+// pub struct OnChainSeqPhragmen;
+// impl onchain::Config for OnChainSeqPhragmen {
+// 	type System = Runtime;
+// 	type Solver = SequentialPhragmen<
+// 		AccountId,
+// 		Perbill
+// 		// pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>
+// 	>;
+// 	type DataProvider = Staking;
+// 	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
+// 	type MaxWinners = <Runtime as pallet_elections_phragmen::Config>::DesiredMembers;
+// 	type VotersBound = MaxOnChainElectingVoters;
+// 	type TargetsBound = MaxOnChainElectableTargets;
+// }
 
-impl pallet_staking::Config for Runtime {
-	type Currency = Balances;
-	type CurrencyBalance = Balance;
-	type MaxNominations = MaxNominations;
-	type UnixTime = Timestamp;
-	type CurrencyToVote = U128CurrencyToVote;
-	type ElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type RewardRemainder = Treasury;
-	type RuntimeEvent = RuntimeEvent;
-	type Slash = Treasury;
-	type Reward = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
-	type SessionsPerEra = SessionsPerEra;
-	type BondingDuration = BondingDuration;
-	type SlashDeferDuration = SlashDeferDuration;
-	type SessionInterface = Self;
-	type EraPayout = ();
-	type NextNewSession = ();
-	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-	type WeightInfo = ();
-	type AdminOrigin = EnsureRoot<AccountId>;
-	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
-	type VoterList = pallet_staking::UseNominatorsAndValidatorsMap<Runtime>;
-	type TargetList = pallet_staking::UseValidatorsMap<Runtime>;
-	type MaxUnlockingChunks = MaxUnlockingChunks;
-	type OnStakerSlash = ();
-	type HistoryDepth = HistoryDepth;
-	type BenchmarkingConfig = StakingBenchmarkingConfig;
-}
+// impl pallet_staking::Config for Runtime {
+// 	type Currency = Balances;
+// 	type CurrencyBalance = Balance;
+// 	type MaxNominations = MaxNominations;
+// 	type UnixTime = Timestamp;
+// 	type CurrencyToVote = U128CurrencyToVote;
+// 	type ElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
+// 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
+// 	type RewardRemainder = Treasury;
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type Slash = Treasury;
+// 	type Reward = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
+// 	type SessionsPerEra = SessionsPerEra;
+// 	type BondingDuration = BondingDuration;
+// 	type SlashDeferDuration = SlashDeferDuration;
+// 	type SessionInterface = Self;
+// 	type EraPayout = ();
+// 	type NextNewSession = ();
+// 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+// 	type WeightInfo = ();
+// 	type AdminOrigin = EnsureRoot<AccountId>;
+// 	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
+// 	type VoterList = pallet_staking::UseNominatorsAndValidatorsMap<Runtime>;
+// 	type TargetList = pallet_staking::UseValidatorsMap<Runtime>;
+// 	type MaxUnlockingChunks = MaxUnlockingChunks;
+// 	type OnStakerSlash = ();
+// 	type HistoryDepth = HistoryDepth;
+// 	type BenchmarkingConfig = StakingBenchmarkingConfig;
+// }
 
 impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
-	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
+	type FullIdentification = pallet_d9_burn_election::ValidatorStats<Runtime>;
+	type FullIdentificationOf = pallet_d9_burn_election::ValidatorStatsOf<Runtime>;
 }
 
 parameter_types! {
-	pub const MaxAuthorities: u32 = DESIRED_MEMBERS;
+	pub const MaxAuthorities: u32 = MAX_VALIDATOR_NODES;
 }
 impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
+parameter_types! {
+	pub const CurrencySubUnits: u128 = 1_000_000_000_000;
+	pub const MaxCandidates: u32 = MAX_CANDIDATES;
+	pub const MaxValidatorNodes: u32 = MAX_VALIDATOR_NODES;
+}
 
+impl pallet_d9_burn_election::Config for Runtime {
+	type CurrencySubUnits = CurrencySubUnits;
+	type Currency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	type MaxCandidates = MaxCandidates;
+	type MaxValidatorNodes = MaxValidatorNodes;
+}
 parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
 	pub const Offset: BlockNumber = SESSION_OFFSET;
 }
 type PeriodicSessions = pallet_session::PeriodicSessions<Period, Offset>;
-type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, Staking>;
+// type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, Staking>;
 
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = pallet_staking::StashOf<Self>;
+	type ValidatorIdOf = pallet_d9_burn_election::ConvertAccountId<Self>;
 	type ShouldEndSession = PeriodicSessions;
 	type NextSessionRotation = PeriodicSessions;
-	type SessionManager = SessionManager;
+	type SessionManager = D9BurnElection;
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
@@ -492,8 +504,8 @@ impl pallet_collective::Config for Runtime {
 
 parameter_types! {
 	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
-	pub const MaxKeys: u32 = DESIRED_MEMBERS + 10;
-	pub const MaxPeerInHeartbeats: u32 = DESIRED_MEMBERS + 10;
+	pub const MaxKeys: u32 = MAX_VALIDATOR_NODES + 10;
+	pub const MaxPeerInHeartbeats: u32 = MAX_VALIDATOR_NODES + 10;
 	pub const MaxPeerDataEncodingSize: u32 = 1024;
 }
 impl pallet_im_online::Config for Runtime {
@@ -501,7 +513,7 @@ impl pallet_im_online::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type NextSessionRotation = PeriodicSessions;
 	type ValidatorSet = Historical;
-	type ReportUnresponsiveness = Offences;
+	type ReportUnresponsiveness = ();
 	type UnsignedPriority = ImOnlineUnsignedPriority;
 	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
 	type MaxKeys = MaxKeys;
@@ -513,43 +525,43 @@ impl<T> frame_system::offchain::SendTransactionTypes<T> for Runtime where Runtim
 	type Extrinsic = UncheckedExtrinsic;
 	type OverarchingCall = RuntimeCall;
 }
-impl pallet_offences::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
-	type OnOffenceHandler = Staking;
-}
+// impl pallet_offences::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+// 	type OnOffenceHandler = ();
+// }
 
-parameter_types! {
-	pub const ElectionPalletId: LockIdentifier = *b"election";
-	pub const CandidacyBond: Balance = CANDIDACY_BOND;
-	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
-	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
-	pub const DesiredMembers: u32 = DESIRED_MEMBERS;
-	pub const DesiredRunnersUp: u32 = DESIRED_RUNNERS_UP;
-	pub const TermDuration: BlockNumber = SESSION_PERIOD;
-	pub const MaxCandidates: u32 = MAX_CANDIDATES;
-	pub const MaxVotesPerVoter: u32 = MAX_VOTES_PER_VOTER;
-}
-impl pallet_elections_phragmen::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
-	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
-	type Currency = Balances; // The currency used for transactions within this pallet (like candidacy bonds).
-	type ChangeMembers = Collective; // The type which should be informed of changes to the set of elected members.
-	type InitializeMembers = Collective; // The type that sets the initial membership set, usually implemented by the session manager.
-	type CurrencyToVote = U128CurrencyToVote; // Used for converting balances to a vote weight for nuanced voting algorithms.
-	type CandidacyBond = CandidacyBond; // The amount of currency to be locked up for submitting a candidacy.
-	type VotingBondBase = VotingBondBase; // The base amount of currency to be locked up for being allowed to vote.
-	type VotingBondFactor = VotingBondFactor; // A factor multiplied with the number of votes to derive the final amount of currency to be locked up for voting.
-	type LoserCandidate = (); // The trait called when a candidate does not get elected.
-	type KickedMember = (); // The trait called when a member gets kicked out.
-	type DesiredMembers = DesiredMembers;
-	type DesiredRunnersUp = DesiredRunnersUp;
-	type TermDuration = TermDuration; // Defines how long each round (or "term") should last.
-	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
-	type MaxVoters = ();
-	type MaxVotesPerVoter = MaxVotesPerVoter;
-	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
-}
+// parameter_types! {
+// 	pub const ElectionPalletId: LockIdentifier = *b"election";
+// 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
+// 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
+// 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
+// 	pub const DesiredMembers: u32 = MAX_VALIDATOR_NODES;
+// 	pub const DesiredRunnersUp: u32 = DESIRED_RUNNERS_UP;
+// 	pub const TermDuration: BlockNumber = SESSION_PERIOD;
+// 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
+// 	pub const MaxVotesPerVoter: u32 = MAX_VOTES_PER_VOTER;
+// }
+// impl pallet_elections_phragmen::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
+// 	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
+// 	type Currency = Balances; // The currency used for transactions within this pallet (like candidacy bonds).
+// 	type ChangeMembers = Collective; // The type which should be informed of changes to the set of elected members.
+// 	type InitializeMembers = Collective; // The type that sets the initial membership set, usually implemented by the session manager.
+// 	type CurrencyToVote = U128CurrencyToVote; // Used for converting balances to a vote weight for nuanced voting algorithms.
+// 	type CandidacyBond = CandidacyBond; // The amount of currency to be locked up for submitting a candidacy.
+// 	type VotingBondBase = VotingBondBase; // The base amount of currency to be locked up for being allowed to vote.
+// 	type VotingBondFactor = VotingBondFactor; // A factor multiplied with the number of votes to derive the final amount of currency to be locked up for voting.
+// 	type LoserCandidate = (); // The trait called when a candidate does not get elected.
+// 	type KickedMember = (); // The trait called when a member gets kicked out.
+// 	type DesiredMembers = DesiredMembers;
+// 	type DesiredRunnersUp = DesiredRunnersUp;
+// 	type TermDuration = TermDuration; // Defines how long each round (or "term") should last.
+// 	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
+// 	type MaxVoters = ();
+// 	type MaxVotesPerVoter = MaxVotesPerVoter;
+// 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
+// }
 
 parameter_types! {
 	pub const MaxSpendPerTransaction: Balance = 1 * ONE_MILLION_D9_TOKENS;
@@ -695,6 +707,7 @@ construct_runtime!(
 		Aura: pallet_aura,
       D9Referral:pallet_d9_referral,
       D9Treasury: pallet_d9_treasury,
+      D9BurnElection:pallet_d9_burn_election,
 		Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
 		MultiSig: pallet_multisig,
@@ -708,11 +721,11 @@ construct_runtime!(
       Contracts:pallet_contracts,
       Historical: pallet_session::historical,
       ImOnline: pallet_im_online,
-      Offences: pallet_offences,
-      PhragmenElections: pallet_elections_phragmen,
+      // Offences: pallet_offences,
+      // PhragmenElections: pallet_elections_phragmen,
       RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
       Session: pallet_session,
-      Staking:pallet_staking,
+      // Staking:pallet_staking,
       Treasury: pallet_treasury,
 	}
 );

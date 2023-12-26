@@ -7,13 +7,14 @@ use d9_node_runtime::{
 	D9ReferralConfig,
 	CollectiveConfig,
 	D9TreasuryConfig,
+	D9BurnElectionConfig,
 	GenesisConfig,
 	GrandpaConfig,
 	ImOnlineConfig,
-	PhragmenElectionsConfig,
+	// PhragmenElectionsConfig,
 	SessionConfig,
 	Signature,
-	StakingConfig,
+	// StakingConfig,
 	SudoConfig,
 	SystemConfig,
 	TreasuryConfig,
@@ -25,7 +26,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{ sr25519, Pair, Public };
 use sp_runtime::traits::{ IdentifyAccount, Verify };
-use sp_runtime::Perbill;
+// use sp_runtime::Perbill;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sc_chain_spec::Properties;
@@ -85,10 +86,10 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 /// seed for actual usage in a live environment.
 pub fn authority_keys_from_seed(
 	s: &str
-) -> (AccountId, AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId) {
+) -> (AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId) {
 	(
-		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", s)),
 		get_account_id_from_seed::<sr25519::Public>(s),
+		// get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", s)),
 		get_from_seed::<AuraId>(s),
 		get_from_seed::<GrandpaId>(s),
 		get_from_seed::<ImOnlineId>(s),
@@ -132,6 +133,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Pre-funded accounts
 					vec![
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
 						get_account_id_from_seed::<sr25519::Public>("Charlie")
 					],
 					true
@@ -210,9 +212,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
-	initial_authorities: Vec<
-		(AccountId, AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)
-	>,
+	initial_authorities: Vec<(AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool
@@ -228,26 +228,33 @@ fn testnet_genesis(
 		d9_referral: D9ReferralConfig {
 			..Default::default()
 		},
+		d9_burn_election: D9BurnElectionConfig {
+			initial_candidates: initial_authorities
+				.iter()
+				.map(|x| x.0.clone())
+				.collect(),
+		},
+
 		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, 400_000_000_000_000_000_000))
 				.collect(),
 		},
 		aura: AuraConfig {
 			..Default::default()
 			// authorities: initial_authorities
 			// 	.iter()
-			// 	.map(|x| x.2.clone())
+			// 	.map(|x| x.1.clone())
 			// 	.collect(),
 		},
 		grandpa: GrandpaConfig {
 			..Default::default()
 			// authorities: initial_authorities
 			// 	.iter()
-			// 	.map(|x| (x.3.clone(), 1))
+			// 	.map(|x| (x.2.clone(), 1))
 			// 	.collect(),
 		},
 		sudo: SudoConfig {
@@ -261,21 +268,21 @@ fn testnet_genesis(
 					(
 						x.0.clone(),
 						x.0.clone(),
-						session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
+						session_keys(x.1.clone(), x.2.clone(), x.3.clone(), x.4.clone()),
 					)
 				})
 				.collect::<Vec<_>>(),
 		},
-		staking: StakingConfig {
-			validator_count: 27,
-			minimum_validator_count: 1,
-			invulnerables: vec![],
-			slash_reward_fraction: Perbill::from_percent(20),
-			..Default::default()
-		},
-		phragmen_elections: PhragmenElectionsConfig {
-			members: vec![],
-		},
+		// staking: StakingConfig {
+		// 	validator_count: 27,
+		// 	minimum_validator_count: 1,
+		// 	invulnerables: vec![],
+		// 	slash_reward_fraction: Perbill::from_percent(20),
+		// 	..Default::default()
+		// },
+		// phragmen_elections: PhragmenElectionsConfig {
+		// 	members: vec![],
+		// },
 		d9_treasury: D9TreasuryConfig {
 			treasurer: Some(root_key.clone()),
 			..Default::default()

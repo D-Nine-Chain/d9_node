@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 User=ubuntu  
-ExecStart=/home/ubuntu/dev-alice/target/release/d9-node --base-path /home/ubuntu/dev-alice/chain_state --chain /home/ubuntu/dev-alice/d9_testnet_chain_spec.json --port 49191 --validator --name Alice
+ExecStart=/home/ubuntu/dev-alice/target/release/d9-node --base-path /home/ubuntu/dev-alice/chain_state --chain /home/ubuntu/dev-alice/d9_testnet_chain_spec.json --port 40100 --validator --name Alice
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=4096

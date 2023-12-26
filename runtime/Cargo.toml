@@ -72,6 +72,7 @@ pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-fe
 pallet-d9-referral = { version = "0.1.0-dev", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                   #d9 assets
 pallet-d9-treasury = { version = "0.1.0-dev", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                   #d9 assets
 pallet-d9-balances = { version = "0.2.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                       #d9 assets
+pallet-d9-burn-election = { version = "0.1.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                  #d9 assets
 # Used for runtime benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.42" }
 frame-system-benchmarking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.42" }
@@ -103,6 +104,7 @@ std = [
    "pallet-d9-treasury/std",
    "pallet-d9-referral/std",
    "pallet-d9-balances/std",
+   "pallet-d9-burn-election/std",
    "pallet-multisig/std",
    "pallet-elections-phragmen/std",
    "pallet-grandpa/std",

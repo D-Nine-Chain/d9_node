@@ -13,3 +13,5 @@
 .idea
 **/dev_chain_state
 **/tmp
+**/*-state
+**/*_state

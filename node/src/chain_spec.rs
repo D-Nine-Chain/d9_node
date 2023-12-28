@@ -7,7 +7,7 @@ use d9_node_runtime::{
 	D9ReferralConfig,
 	CollectiveConfig,
 	D9TreasuryConfig,
-	D9BurnElectionConfig,
+	D9NodeVotingConfig,
 	GenesisConfig,
 	GrandpaConfig,
 	ImOnlineConfig,
@@ -115,9 +115,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
 	Ok(
 		ChainSpec::from_genesis(
 			// Name
-			"dev_d9",
+			"dev_d9_v2",
 			// ID
-			"dev_d9",
+			"dev_d9_v2",
 			ChainType::Development,
 			move || {
 				testnet_genesis(
@@ -144,9 +144,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
 			// Telemetry
 			None,
 			// Protocol ID
-			Some("dev_D9"),
+			Some("dev_D9_v2"),
 			//fork ID
-			Some("dev_d9_original"),
+			Some("dev_d9_v2"),
 			// Properties
 			Some(properties),
 			// Extensions
@@ -228,7 +228,7 @@ fn testnet_genesis(
 		d9_referral: D9ReferralConfig {
 			..Default::default()
 		},
-		d9_burn_election: D9BurnElectionConfig {
+		d9_node_voting: D9NodeVotingConfig {
 			initial_candidates: initial_authorities
 				.iter()
 				.map(|x| x.0.clone())

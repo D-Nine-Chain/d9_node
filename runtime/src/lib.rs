@@ -144,7 +144,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 100,
+	spec_version: 110,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -155,6 +155,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
 /// up by `pallet_aura` to implement `fn slot_duration()`.
+///
 ///
 /// Change this to adjust the block time.
 
@@ -441,8 +442,8 @@ parameter_types! {
 // }
 
 impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = pallet_d9_burn_election::ValidatorStats<Runtime>;
-	type FullIdentificationOf = pallet_d9_burn_election::ValidatorStatsOf<Runtime>;
+	type FullIdentification = pallet_d9_node_voting::ValidatorStats<Runtime>;
+	type FullIdentificationOf = pallet_d9_node_voting::ValidatorStatsOf<Runtime>;
 }
 
 parameter_types! {
@@ -457,7 +458,7 @@ parameter_types! {
 	pub const MaxValidatorNodes: u32 = MAX_VALIDATOR_NODES;
 }
 
-impl pallet_d9_burn_election::Config for Runtime {
+impl pallet_d9_node_voting::Config for Runtime {
 	type CurrencySubUnits = CurrencySubUnits;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
@@ -474,10 +475,10 @@ type PeriodicSessions = pallet_session::PeriodicSessions<Period, Offset>;
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = pallet_d9_burn_election::ConvertAccountId<Self>;
+	type ValidatorIdOf = pallet_d9_node_voting::ConvertAccountId<Self>;
 	type ShouldEndSession = PeriodicSessions;
 	type NextSessionRotation = PeriodicSessions;
-	type SessionManager = D9BurnElection;
+	type SessionManager = D9NodeVoting;
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
@@ -707,7 +708,7 @@ construct_runtime!(
 		Aura: pallet_aura,
       D9Referral:pallet_d9_referral,
       D9Treasury: pallet_d9_treasury,
-      D9BurnElection:pallet_d9_burn_election,
+      D9NodeVoting:pallet_d9_node_voting,
 		Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
 		MultiSig: pallet_multisig,

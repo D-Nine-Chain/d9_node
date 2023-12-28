@@ -1485,7 +1485,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-d9-balances",
- "pallet-d9-burn-election",
+ "pallet-d9-node-voting",
  "pallet-d9-referral",
  "pallet-d9-treasury",
  "pallet-elections-phragmen",
@@ -4927,7 +4927,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-balances"
 version = "0.2.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#c7fcad7ca3a9efe59a34b3cc14c7d1387ac9c290"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#0709ecf771053b9dadea17ca0cbf28579a678fc6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4941,9 +4941,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-d9-burn-election"
+name = "pallet-d9-node-voting"
 version = "0.1.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#c7fcad7ca3a9efe59a34b3cc14c7d1387ac9c290"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#0709ecf771053b9dadea17ca0cbf28579a678fc6"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -4966,7 +4966,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-referral"
 version = "0.1.0-dev"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#c7fcad7ca3a9efe59a34b3cc14c7d1387ac9c290"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#0709ecf771053b9dadea17ca0cbf28579a678fc6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4985,7 +4985,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-treasury"
 version = "0.1.0-dev"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#c7fcad7ca3a9efe59a34b3cc14c7d1387ac9c290"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#0709ecf771053b9dadea17ca0cbf28579a678fc6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

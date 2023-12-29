@@ -3,7 +3,7 @@
    "id": "dev_d9_v2",
    "chainType": "Development",
    "bootNodes": [
-      "/ip4/127.0.0.1/tcp/40100/p2p/12D3KooWCHtUnKiQnzBqixQMY84uKfajoqdU8Kt4Gv5uNhMUgGUd"
+      "/ip4/13.58.39.235/tcp/40100/p2p/12D3KooWGcitvZCzwi9PDuZ7buCLJpM5W7fhsa2JFMCa2N8Pkdrg"
    ],
    "telemetryEndpoints": null,
    "protocolId": "dev_D9_v2",

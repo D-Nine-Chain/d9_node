@@ -1095,6 +1095,12 @@ impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash
          pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account)
       }
    }
+
+   impl runtime_api::NodeVotingRuntimeApi<Block, AccountId> for Runtime{
+      fn get_sorted_candidates_with_votes() -> Vec<(AccountId, u64)> {
+         pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates_with_votes()
+      }
+   }
 }
 
 #[cfg(test)]

@@ -7,12 +7,12 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use sp_std::fmt::Debug;
-pub use runtime_api::D9NodeVotingApi;
+pub use runtime_api::NodeVotingRuntimeApi;
 
 #[rpc(client, server, namespace = "voting")]
 pub trait VotingApi<BlockHash, AccountId> {
 	#[method(name = "getSortedCandidates")]
-	fn get_sorted_candidates(&self, at: Option<BlockHash>) -> RpcResult<Option<Vec<AccountId>>>;
+	fn get_sorted_candidates(&self, at: Option<BlockHash>) -> RpcResult<Vec<(AccountId, u64)>>;
 }
 
 pub struct Voting<C, P> {
@@ -49,18 +49,18 @@ impl<C, Block, AccountId> VotingApiServer<<Block as BlockT>::Hash, AccountId>
 	where
 		Block: BlockT,
 		C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + Send + Sync + 'static,
-		C::Api: D9NodeVotingApi<Block, AccountId>,
+		C::Api: NodeVotingRuntimeApi<Block, AccountId>,
 		AccountId: Codec + MaxEncodedLen + Eq + Debug + Clone
 {
 	fn get_sorted_candidates(
 		&self,
 		at: Option<<Block as BlockT>::Hash>
-	) -> RpcResult<Option<Vec<AccountId>>> {
+	) -> RpcResult<Vec<(AccountId, u64)>> {
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let maybe_candidates = api
-			.get_sorted_candidates(at)
+			.get_sorted_candidates_with_votes(at)
 			.map_err(|e| map_err(e, "Unable to query dispatch info."))?;
 
 		Ok(maybe_candidates)

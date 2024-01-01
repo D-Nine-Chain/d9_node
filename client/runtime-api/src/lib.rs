@@ -9,6 +9,6 @@ sp_api::decl_runtime_apis! {
 	}
 
 	pub trait NodeVotingRuntimeApi<AccountId> where AccountId: Codec {
-		fn get_sorted_candidates_with_votes() -> Vec<(AccountId, u64)>;
+		fn get_sorted_candidates() -> Vec<(AccountId, u64)>;
 	}
 }

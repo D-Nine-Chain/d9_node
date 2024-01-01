@@ -144,7 +144,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 110,
+	spec_version: 111,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1097,7 +1097,7 @@ impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash
    }
 
    impl runtime_api::NodeVotingRuntimeApi<Block, AccountId> for Runtime{
-      fn get_sorted_candidates_with_votes() -> Vec<(AccountId, u64)> {
+      fn get_sorted_candidates() -> Vec<(AccountId, u64)> {
          pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates_with_votes()
       }
    }

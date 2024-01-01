@@ -60,7 +60,7 @@ impl<C, Block, AccountId> VotingApiServer<<Block as BlockT>::Hash, AccountId>
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let maybe_candidates = api
-			.get_sorted_candidates_with_votes(at)
+			.get_sorted_candidates(at)
 			.map_err(|e| map_err(e, "Unable to query dispatch info."))?;
 
 		Ok(maybe_candidates)

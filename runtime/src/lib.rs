@@ -636,13 +636,10 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 				let _ = env.write(&validators_bytes, false, None);
 			}
 			3 => {
-				let candidates_and_amount =
-					pallet_elections_phragmen::Pallet::<Runtime>::candidates();
-				let just_candidate_ids: Vec<AccountId> = candidates_and_amount
-					.into_iter()
-					.map(|(account_id, _)| account_id)
-					.collect();
-				let candidates_bytes = just_candidate_ids.encode();
+				let candidates_and_votes =
+					pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates_with_votes();
+
+				let candidates_bytes = candidates_and_votes.encode();
 				let _ = env.write(&candidates_bytes, false, None);
 			}
 
@@ -744,11 +741,8 @@ construct_runtime!(
       Contracts:pallet_contracts,
       Historical: pallet_session::historical,
       ImOnline: pallet_im_online,
-      // Offences: pallet_offences,
-      // PhragmenElections: pallet_elections_phragmen,
       RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
       Session: pallet_session,
-      // Staking:pallet_staking,
       Treasury: pallet_treasury,
 	}
 );

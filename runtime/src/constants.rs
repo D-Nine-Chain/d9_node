@@ -56,7 +56,7 @@ pub const STAKING_ID: LockIdentifier = *b"staking/";
 /// Unique identifier for locks related to elections.
 pub const ELECTION_LOCK: LockIdentifier = *b"election";
 /// Desired number of members for the validator set.
-pub const DESIRED_MEMBERS: u32 = 27;
+pub const MAX_VALIDATOR_NODES: u32 = 27;
 /// Desired number of backup candidates or runners-up.
 pub const DESIRED_RUNNERS_UP: u32 = 100;
 /// max N of electable validators
@@ -74,7 +74,7 @@ pub const SESSIONS_PER_ERA: SessionIndex = 1;
 /// Number of eras that staked funds must remain bonded.
 pub const BONDING_DURATION: EraIndex = 7;
 /// max number of candidates that can be in a single eleection
-pub const MAX_CANDIDATES: u32 = 200;
+pub const MAX_CANDIDATES: u32 = 300;
 /// max nominations per voter per election
 pub const MAX_NOMINATIONS: u32 = 3;
 /// max number of votes per voter per election

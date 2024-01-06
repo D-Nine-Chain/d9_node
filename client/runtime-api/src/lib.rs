@@ -8,4 +8,8 @@ sp_api::decl_runtime_apis! {
 		fn get_ancestors(account: AccountId) -> Option<Vec<AccountId>>;
 		fn get_direct_referral_count(account: AccountId) -> u32;
 	}
+
+	pub trait NodeVotingRuntimeApi<AccountId> where AccountId: Codec {
+		fn get_sorted_candidates() -> Vec<(AccountId, u64)>;
+	}
 }

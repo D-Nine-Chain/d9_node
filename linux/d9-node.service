@@ -1,0 +1,15 @@
+[Unit]
+Description=D9 Node
+After=network-online.target
+
+[Service]
+User=ubuntu
+ExecStart=/home/ubuntu/dev-alice/target/release/d9-node --base-path /home/ubuntu/dev-alice/chain_state --chain /home/ubuntu/dev-alice/d9_dev_chain_spec.json --alice --port 30333 --ws-port 9944 --rpc-port 9933 --node-key 0000000000000000000000000000000000000000000000000000000000000000 --validator
+EnvironmentFile=/etc/d9/d9-node.conf
+[other-flags-and-options]
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

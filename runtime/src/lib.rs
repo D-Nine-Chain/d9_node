@@ -362,22 +362,6 @@ impl pallet_assets::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
-// parameter_types! {
-// 	pub const MaxWinners: u32 = DESIRED_MEMBERS;
-// 	pub const TargetsBound: u32 = DESIRED_RUNNERS_UP;
-// }
-// // type Solver = frame_election_provider_support::SequentialPhragmen<AccountId, Perbill>;
-// impl frame_election_provider_support::onchain::Config for Runtime {
-// 	// type System = frame_system::Pallet<Runtime>;
-// 	type System = Runtime;
-// 	type Solver = SequentialPhragmen<AccountId, Perbill>;
-// 	type DataProvider = Staking;
-// 	type WeightInfo = ();
-// 	type MaxWinners = MaxWinners;
-// 	type VotersBound = ();
-// 	type TargetsBound = TargetsBound;
-// }
-
 parameter_types! {
 	pub const SessionsPerEra: SessionIndex = SESSIONS_PER_ERA;
 	pub const SlashDeferDuration: EraIndex = SLASH_DEFER_DURATION;
@@ -391,58 +375,9 @@ parameter_types! {
 	pub const MaxOnChainElectingVoters: u32 = MAX_ON_CHAIN_ELECTING_VOTERS;
 	pub const MaxOnChainElectableTargets: u32 = MAX_ON_CHAIN_ELECTABLE_TARGETS;
 }
-// pub struct StakingBenchmarkingConfig;
-// impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
-// 	type MaxNominators = ConstU32<1000>;
-// 	type MaxValidators = ConstU32<1000>;
-// }
-// pub struct OnChainSeqPhragmen;
-// impl onchain::Config for OnChainSeqPhragmen {
-// 	type System = Runtime;
-// 	type Solver = SequentialPhragmen<
-// 		AccountId,
-// 		Perbill
-// 		// pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>
-// 	>;
-// 	type DataProvider = Staking;
-// 	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
-// 	type MaxWinners = <Runtime as pallet_elections_phragmen::Config>::DesiredMembers;
-// 	type VotersBound = MaxOnChainElectingVoters;
-// 	type TargetsBound = MaxOnChainElectableTargets;
-// }
-
-// impl pallet_staking::Config for Runtime {
-// 	type Currency = Balances;
-// 	type CurrencyBalance = Balance;
-// 	type MaxNominations = MaxNominations;
-// 	type UnixTime = Timestamp;
-// 	type CurrencyToVote = U128CurrencyToVote;
-// 	type ElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
-// 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
-// 	type RewardRemainder = Treasury;
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Slash = Treasury;
-// 	type Reward = pallet_d9_treasury::RewardBalancer<Runtime, ()>;
-// 	type SessionsPerEra = SessionsPerEra;
-// 	type BondingDuration = BondingDuration;
-// 	type SlashDeferDuration = SlashDeferDuration;
-// 	type SessionInterface = Self;
-// 	type EraPayout = ();
-// 	type NextNewSession = ();
-// 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-// 	type WeightInfo = ();
-// 	type AdminOrigin = EnsureRoot<AccountId>;
-// 	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
-// 	type VoterList = pallet_staking::UseNominatorsAndValidatorsMap<Runtime>;
-// 	type TargetList = pallet_staking::UseValidatorsMap<Runtime>;
-// 	type MaxUnlockingChunks = MaxUnlockingChunks;
-// 	type OnStakerSlash = ();
-// 	type HistoryDepth = HistoryDepth;
-// 	type BenchmarkingConfig = StakingBenchmarkingConfig;
-// }
 
 impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = pallet_d9_node_voting::ValidatorStats<Runtime>;
+	type FullIdentification = pallet_d9_node_voting::ValidatorVoteStats<Runtime>;
 	type FullIdentificationOf = pallet_d9_node_voting::ValidatorStatsOf<Runtime>;
 }
 
@@ -618,35 +553,73 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 		let func_id = env.func_id();
 
 		match func_id {
+			// get parent
 			0 => {
 				let account: AccountId = env.read_as()?;
 				let parent = pallet_d9_referral::Pallet::<Runtime>::get_parent(&account);
 				let parent_bytes = parent.encode();
 				let _ = env.write(&parent_bytes, false, None);
 			}
+			// get ancestors
 			1 => {
 				let account = env.read_as()?;
 				let maybe_ancestors = pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account);
 				let ancestors_bytes = maybe_ancestors.encode();
 				let _ = env.write(&ancestors_bytes, false, None);
 			}
+			// get current validators
 			2 => {
 				let validators = pallet_session::Pallet::<Runtime>::validators();
 				let validators_bytes = validators.encode();
 				let _ = env.write(&validators_bytes, false, None);
 			}
-			3 => {
-				let candidates_and_votes =
-					pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates_with_votes();
 
-				let candidates_bytes = candidates_and_votes.encode();
-				let _ = env.write(&candidates_bytes, false, None);
+			// get session list (validators and canidates) is a bounded vec and ordered
+			3 => {
+				let session_index: u32 = env.read_as()?;
+				let session_list_opt = pallet_d9_node_voting::Pallet::<Runtime>::session_node_list(
+					SessionIndex::from(session_index)
+				);
+				let session_list = match session_list_opt {
+					Some(session_list) => session_list.into_inner(),
+					None => Vec::new(),
+				};
+				let session_list_bytes = session_list.encode();
+				let _ = env.write(&session_list_bytes, false, None);
 			}
 
+			//get_current_session
 			4 => {
 				let session = pallet_session::Pallet::<Runtime>::current_index();
 				let session_bytes = session.encode();
 				let _ = env.write(&session_bytes, false, None);
+			}
+			//get_user_supported_nodes
+			5 => {
+				let account: AccountId = env.read_as()?;
+				let supported_nodes: Vec<AccountId> =
+					pallet_d9_node_voting::Pallet::<Runtime>::get_user_supported_nodes(account);
+				let supported_nodes_bytes: Vec<u8> = supported_nodes.encode();
+				let _ = env.write(&supported_nodes_bytes, false, None);
+			}
+			// get_node_sharing_percentage
+			6 => {
+				let node: AccountId = env.read_as()?;
+				let node_sharing_percent: Option<u8> =
+					pallet_d9_node_voting::Pallet::<Runtime>::get_node_sharing_percent(node);
+				let node_sharing_percent_bytes = node_sharing_percent.encode();
+				let _ = env.write(&node_sharing_percent_bytes, false, None);
+			}
+			//user vote ratio
+			7 => {
+				let (user_id, node_id): (AccountId, AccountId) = env.read_as()?;
+				let user_vote_ratio =
+					pallet_d9_node_voting::Pallet::<Runtime>::get_user_support_ratio(
+						user_id,
+						node_id
+					);
+				let user_vote_ratio_bytes = user_vote_ratio.encode();
+				let _ = env.write(&user_vote_ratio_bytes, false, None);
 			}
 
 			_ => {

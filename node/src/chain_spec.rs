@@ -105,7 +105,54 @@ fn session_keys(
 ) -> SessionKeys {
 	SessionKeys { aura, grandpa, im_online, authority_discovery }
 }
-
+pub fn main_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Main wasm not available".to_string())?;
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "D9".into());
+	properties.insert("tokenDecimals".into(), (12).into());
+	properties.insert("ss58Format".into(), (9).into());
+	Ok(
+		ChainSpec::from_genesis(
+			// Name
+			"D9",
+			// ID
+			"d9_main",
+			ChainType::Live,
+			move || {
+				network_genesis(
+					wasm_binary,
+					// Initial PoA authorities
+					vec![
+						authority_keys_from_seed("Alice"),
+						authority_keys_from_seed("Bob"),
+						authority_keys_from_seed("Charlie")
+					],
+					// Sudo account
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					// Pre-funded accounts
+					vec![
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_account_id_from_seed::<sr25519::Public>("Charlie")
+					],
+					true
+				)
+			},
+			// Bootnodes
+			vec![],
+			// Telemetry
+			None,
+			// Protocol ID
+			Some("dev_D9_v2"),
+			//fork ID
+			Some("dev_d9_v2"),
+			// Properties
+			Some(properties),
+			// Extensions
+			None
+		)
+	)
+}
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 	let mut properties = Properties::new();
@@ -120,7 +167,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 			"dev_d9_v2",
 			ChainType::Development,
 			move || {
-				testnet_genesis(
+				network_genesis(
 					wasm_binary,
 					// Initial PoA authorities
 					vec![
@@ -166,7 +213,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 			"local_d9",
 			ChainType::Local,
 			move || {
-				testnet_genesis(
+				network_genesis(
 					wasm_binary,
 					// Initial PoA authorities
 					vec![
@@ -210,7 +257,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 }
 
 /// Configure initial storage state for FRAME modules.
-fn testnet_genesis(
+fn network_genesis(
 	wasm_binary: &[u8],
 	initial_authorities: Vec<(AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)>,
 	root_key: AccountId,

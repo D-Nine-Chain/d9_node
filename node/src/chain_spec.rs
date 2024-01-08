@@ -105,7 +105,7 @@ fn session_keys(
 ) -> SessionKeys {
 	SessionKeys { aura, grandpa, im_online, authority_discovery }
 }
-pub fn main_config() -> Result<ChainSpec, String> {
+pub fn live_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Main wasm not available".to_string())?;
 	let mut properties = Properties::new();
 	properties.insert("tokenSymbol".into(), "D9".into());
@@ -128,13 +128,9 @@ pub fn main_config() -> Result<ChainSpec, String> {
 						authority_keys_from_seed("")
 					],
 					// Sudo account
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>(""),
 					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie")
-					],
+					vec![get_account_id_from_seed::<sr25519::Public>("")],
 					true
 				)
 			},
@@ -143,9 +139,9 @@ pub fn main_config() -> Result<ChainSpec, String> {
 			// Telemetry
 			None,
 			// Protocol ID
-			Some("dev_D9_v2"),
+			Some("D9_main"),
 			//fork ID
-			Some("dev_d9_v2"),
+			Some("d9_main"),
 			// Properties
 			Some(properties),
 			// Extensions
@@ -287,7 +283,7 @@ fn network_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 400_000_000_000_000_000_000))
+				.map(|k| (k, 10_000_000_000_000_000_000_000))
 				.collect(),
 		},
 		aura: AuraConfig {

@@ -4,10 +4,11 @@ After=network-online.target
 
 [Service]
 User=ubuntu  
-ExecStart=/home/ubuntu/dev-alice/target/release/d9-node --base-path /home/ubuntu/alice/chain-data --chain /home/ubuntu/alice/burn-staking-spec.json --port 40100 --alice
+ExecStart=/home/ubuntu/d9-node/target/release/d9-node --base-path /home/ubuntu/node-data --chain /home/ubuntu/d9-node/main-spec.json --port 40100 --validator --node-key 
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=4096
+Environment="NODE_KEY="
 
 [Install]
 WantedBy=multi-user.target

@@ -105,7 +105,50 @@ fn session_keys(
 ) -> SessionKeys {
 	SessionKeys { aura, grandpa, im_online, authority_discovery }
 }
-
+pub fn live_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Main wasm not available".to_string())?;
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "D9".into());
+	properties.insert("tokenDecimals".into(), (12).into());
+	properties.insert("ss58Format".into(), (9).into());
+	Ok(
+		ChainSpec::from_genesis(
+			// Name
+			"D9",
+			// ID
+			"d9_main",
+			ChainType::Live,
+			move || {
+				network_genesis(
+					wasm_binary,
+					// Initial PoA authorities
+					vec![
+						authority_keys_from_seed(""),
+						authority_keys_from_seed(""),
+						authority_keys_from_seed("")
+					],
+					// Sudo account
+					get_account_id_from_seed::<sr25519::Public>(""),
+					// Pre-funded accounts
+					vec![get_account_id_from_seed::<sr25519::Public>("")],
+					true
+				)
+			},
+			// Bootnodes
+			vec![],
+			// Telemetry
+			None,
+			// Protocol ID
+			Some("D9_main"),
+			//fork ID
+			Some("d9_main"),
+			// Properties
+			Some(properties),
+			// Extensions
+			None
+		)
+	)
+}
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 	let mut properties = Properties::new();
@@ -120,7 +163,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 			"dev_d9_v2",
 			ChainType::Development,
 			move || {
-				testnet_genesis(
+				network_genesis(
 					wasm_binary,
 					// Initial PoA authorities
 					vec![
@@ -166,7 +209,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 			"local_d9",
 			ChainType::Local,
 			move || {
-				testnet_genesis(
+				network_genesis(
 					wasm_binary,
 					// Initial PoA authorities
 					vec![
@@ -210,7 +253,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 }
 
 /// Configure initial storage state for FRAME modules.
-fn testnet_genesis(
+fn network_genesis(
 	wasm_binary: &[u8],
 	initial_authorities: Vec<(AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)>,
 	root_key: AccountId,
@@ -240,7 +283,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 400_000_000_000_000_000_000))
+				.map(|k| (k, 10_000_000_000_000_000_000_000))
 				.collect(),
 		},
 		aura: AuraConfig {

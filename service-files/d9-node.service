@@ -1,0 +1,13 @@
+[Unit]
+Description=D9 Node
+After=network-online.target
+
+[Service]
+User=ubuntu  
+ExecStart=/home/ubuntu/d9_node/target/release/d9-node --base-path /home/ubuntu/node-data --chain /home/ubuntu/d9_node/main-spec.json --port 40100 --validator
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

@@ -6,21 +6,12 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
-use sp_core::crypto::UncheckedFrom;
 pub use crate::constants::*;
-use frame_system::EnsureRoot;
+use frame_support::log::error;
+use frame_support::pallet_prelude::{ Decode, Encode, RuntimeDebug };
 use frame_support::traits::AsEnsureOriginWithArg;
 use frame_support::PalletId;
-use frame_support::pallet_prelude::{ Encode, Decode, RuntimeDebug };
-use pallet_grandpa::AuthorityId as GrandpaId;
-use sp_api::impl_runtime_apis;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_staking::{ EraIndex, SessionIndex };
-use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
-use sp_runtime::DispatchError;
-use frame_support::log::error;
-#[cfg(feature = "runtime-benchmarks")]
-use pallet_contracts::NoopMigration;
+use frame_system::EnsureRoot;
 use pallet_contracts::chain_extension::{
 	ChainExtension,
 	Environment,
@@ -29,6 +20,14 @@ use pallet_contracts::chain_extension::{
 	RetVal,
 	SysConfig,
 };
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_contracts::NoopMigration;
+use pallet_grandpa::AuthorityId as GrandpaId;
+use sp_api::impl_runtime_apis;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::crypto::UncheckedFrom;
+use sp_core::{ crypto::KeyTypeId, OpaqueMetadata };
+use sp_runtime::DispatchError;
 use sp_runtime::{
 	create_runtime_str,
 	generic,
@@ -46,6 +45,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 	MultiSignature,
 };
+use sp_staking::{ EraIndex, SessionIndex };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -57,15 +57,15 @@ pub use frame_support::{
 	construct_runtime,
 	parameter_types,
 	traits::{
+		ConstBool,
 		ConstU128,
 		ConstU32,
 		ConstU64,
 		ConstU8,
 		KeyOwnerProofSystem,
+		Nothing,
 		Randomness,
 		StorageInfo,
-		Nothing,
-		ConstBool,
 	},
 	weights::{
 		constants::{
@@ -85,7 +85,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ ConstFeeMultiplier, CurrencyAdapter, Multiplier };
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{ Perbill, Permill, transaction_validity::TransactionPriority };
+pub use sp_runtime::{ transaction_validity::TransactionPriority, Perbill, Permill };
 /// Import the template pallet.
 // pub use pallet_template;
 
@@ -136,15 +136,15 @@ pub mod opaque {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("testnet-d9"),
-	impl_name: create_runtime_str!("testnet-d9"),
+	spec_name: create_runtime_str!("d9"),
+	impl_name: create_runtime_str!("d9"),
 	authoring_version: 1,
 	// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 113,
+	spec_version: 115,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -388,17 +388,26 @@ impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 parameter_types! {
+	pub const NodeRewardPalletId: PalletId = PalletId(*b"nde/rwrd");
+}
+impl pallet_d9_node_rewards::Config for Runtime {
+	type CurrencySubUnits = CurrencySubUnits;
+	type Currency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	type PalletId = NodeRewardPalletId;
+}
+parameter_types! {
 	pub const CurrencySubUnits: u128 = 1_000_000_000_000;
 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
 	pub const MaxValidatorNodes: u32 = MAX_VALIDATOR_NODES;
 }
-
 impl pallet_d9_node_voting::Config for Runtime {
 	type CurrencySubUnits = CurrencySubUnits;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type MaxCandidates = MaxCandidates;
 	type MaxValidatorNodes = MaxValidatorNodes;
+	type NodeRewardManager = D9NodeRewards;
 }
 parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
@@ -698,9 +707,10 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		Aura: pallet_aura,
-      D9Referral:pallet_d9_referral,
-      D9Treasury: pallet_d9_treasury,
-      D9NodeVoting:pallet_d9_node_voting,
+		D9Referral: pallet_d9_referral,
+		D9Treasury: pallet_d9_treasury,
+		D9NodeVoting: pallet_d9_node_voting,
+		D9NodeRewards: pallet_d9_node_rewards,
 		Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
 		MultiSig: pallet_multisig,
@@ -708,15 +718,15 @@ construct_runtime!(
 		System: frame_system,
 		Timestamp: pallet_timestamp,
 		TransactionPayment: pallet_transaction_payment,
-      Assets:pallet_assets,
-      AuthorityDiscovery: pallet_authority_discovery,
-      Collective: pallet_collective,
-      Contracts:pallet_contracts,
-      Historical: pallet_session::historical,
-      ImOnline: pallet_im_online,
-      RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
-      Session: pallet_session,
-      Treasury: pallet_treasury,
+		Assets: pallet_assets,
+		AuthorityDiscovery: pallet_authority_discovery,
+		Collective: pallet_collective,
+		Contracts: pallet_contracts,
+		Historical: pallet_session::historical,
+		ImOnline: pallet_im_online,
+		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
+		Session: pallet_session,
+		Treasury: pallet_treasury,
 	}
 );
 
@@ -950,7 +960,7 @@ impl_runtime_apis! {
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
-         use frame_support::PalletId;
+		 use frame_support::PalletId;
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -1076,22 +1086,22 @@ impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash
 			)
 		}
 	}
-      impl runtime_api::ReferralRuntimeApi<Block, AccountId> for Runtime{
-      fn get_parent(account: AccountId) -> Option<AccountId> {
-         pallet_d9_referral::Pallet::<Runtime>::get_parent(&account)
-      }
-      fn get_ancestors(account:AccountId)->Option<Vec<AccountId>>{
-         pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account)
-      }
-      fn get_direct_referral_count(account:AccountId)->u32{
-         pallet_d9_referral::Pallet::<Runtime>::get_direct_referral_count(account)
-      }
+	  impl runtime_api::ReferralRuntimeApi<Block, AccountId> for Runtime{
+	  fn get_parent(account: AccountId) -> Option<AccountId> {
+		 pallet_d9_referral::Pallet::<Runtime>::get_parent(&account)
+	  }
+	  fn get_ancestors(account:AccountId)->Option<Vec<AccountId>>{
+		 pallet_d9_referral::Pallet::<Runtime>::get_ancestors(account)
+	  }
+	  fn get_direct_referral_count(account:AccountId)->u32{
+		 pallet_d9_referral::Pallet::<Runtime>::get_direct_referral_count(account)
+	  }
    }
 
    impl runtime_api::NodeVotingRuntimeApi<Block, AccountId> for Runtime{
-      fn get_sorted_candidates() -> Vec<(AccountId, u64)> {
-         pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates_with_votes()
-      }
+	  fn get_sorted_candidates() -> Vec<(AccountId, u64)> {
+		 pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates_with_votes()
+	  }
    }
 }
 

@@ -144,7 +144,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 112,
+	spec_version: 113,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -388,17 +388,26 @@ impl pallet_authority_discovery::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 parameter_types! {
+	pub const NodeRewardPalletId: PalletId = PalletId(*b"nde/rwrd");
+}
+impl pallet_d9_node_rewards::Config for Runtime {
+	type CurrencySubUnits = CurrencySubUnits;
+	type Currency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	type PalletId = NodeRewardPalletId;
+}
+parameter_types! {
 	pub const CurrencySubUnits: u128 = 1_000_000_000_000;
 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
 	pub const MaxValidatorNodes: u32 = MAX_VALIDATOR_NODES;
 }
-
 impl pallet_d9_node_voting::Config for Runtime {
 	type CurrencySubUnits = CurrencySubUnits;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type MaxCandidates = MaxCandidates;
 	type MaxValidatorNodes = MaxValidatorNodes;
+	type NodeRewardManager = D9NodeRewards;
 }
 parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
@@ -701,6 +710,7 @@ construct_runtime!(
       D9Referral:pallet_d9_referral,
       D9Treasury: pallet_d9_treasury,
       D9NodeVoting:pallet_d9_node_voting,
+      D9NodeRewards:pallet_d9_node_rewards,
 		Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
 		MultiSig: pallet_multisig,

@@ -5,8 +5,16 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-pub mod constants;
-pub use crate::constants::*;
+
+#[cfg(feature = "testnet")]
+pub mod constants_test;
+#[cfg(not(feature = "testnet"))]
+pub mod constants_main;
+#[cfg(feature = "testnet")]
+pub use crate::constants_test::*;
+#[cfg(not(feature = "testnet"))]
+pub use crate::constants_main::*;
+
 use frame_support::log::error;
 use frame_support::pallet_prelude::{ Decode, Encode, RuntimeDebug };
 use frame_support::traits::AsEnsureOriginWithArg;
@@ -134,6 +142,7 @@ pub mod opaque {
 
 // To learn more about runtime versioning, see:
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
+#[cfg(feature = "testnet")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("d9"),
@@ -144,7 +153,25 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 115,
+	spec_version: 116,
+	impl_version: 1,
+	apis: RUNTIME_API_VERSIONS,
+	transaction_version: 1,
+	state_version: 1,
+};
+
+#[cfg(not(feature = "testnet"))]
+#[sp_version::runtime_version]
+pub const VERSION: RuntimeVersion = RuntimeVersion {
+	spec_name: create_runtime_str!("d9"),
+	impl_name: create_runtime_str!("d9"),
+	authoring_version: 1,
+	// The version of the runtime specification. A full node will not attempt to use its native
+	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
+	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
+	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
+	//   the compatible custom types.
+	spec_version: 113,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -583,7 +610,7 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 				let _ = env.write(&validators_bytes, false, None);
 			}
 
-			// get session list (validators and canidates) is a bounded vec and ordered
+			// get session list (validators and candidates) is a bounded vec and ordered
 			3 => {
 				let session_index: u32 = env.read_as()?;
 				let session_list_opt = pallet_d9_node_voting::Pallet::<Runtime>::session_node_list(
@@ -629,6 +656,12 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 					);
 				let user_vote_ratio_bytes = user_vote_ratio.encode();
 				let _ = env.write(&user_vote_ratio_bytes, false, None);
+			}
+
+			8 => {
+				let current_validators = pallet_session::Pallet::<Runtime>::validators();
+				let current_validators_bytes = current_validators.encode();
+				let _ = env.write(&current_validators_bytes, false, None);
 			}
 
 			_ => {

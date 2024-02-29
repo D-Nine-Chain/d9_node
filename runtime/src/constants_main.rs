@@ -1,10 +1,10 @@
 //! constants module is set for runtime constants.
 //! this is not to be used for pallets constants that is to be defined in parameter_types!
 
+use crate::{ Balance, BlockNumber };
 use frame_support::traits::LockIdentifier;
 use sp_runtime::Perbill;
-use sp_staking::{ SessionIndex, EraIndex };
-use crate::{ Balance, BlockNumber };
+use sp_staking::{ EraIndex, SessionIndex };
 
 //chain
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
@@ -13,7 +13,7 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 // Time as measured in blocks
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 // Attempting to do so will brick block production.
-pub const MILLISECS_PER_BLOCK: u64 = 3000;
+pub const MILLISECS_PER_BLOCK: u64 = 1200;
 // pub const BLOCKS_PER_METRIC_MINUTE: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const MINUTE: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOUR: BlockNumber = MINUTE * 60;
@@ -64,7 +64,7 @@ pub const MAX_ON_CHAIN_ELECTABLE_TARGETS: u32 = 200;
 /// max N of voters
 pub const MAX_ON_CHAIN_ELECTING_VOTERS: u32 = 1000;
 /// Number of blocks constituting a session.
-pub const SESSION_PERIOD: BlockNumber = 1 * DAY;
+pub const SESSION_PERIOD: BlockNumber = 7 * MINUTE;
 /// Offset time before starting the next session.
 pub const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
 /// wait time in era duration until a slash is executed

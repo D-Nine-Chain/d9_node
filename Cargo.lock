@@ -4928,7 +4928,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-balances"
 version = "0.2.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#bb58e458509fcfc530104ca298185c672b5cbda8"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#6065f663dc7cd93923a2749addd1f11b57fcf41e"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4943,14 +4943,15 @@ dependencies = [
 
 [[package]]
 name = "pallet-d9-node-rewards"
-version = "0.1.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#bb58e458509fcfc530104ca298185c672b5cbda8"
+version = "0.2.0"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=2-merchant-points-get-voting#f1310db0661d0ce2b4c4812fc1ce42da28773b4a"
 dependencies = [
  "frame-election-provider-support",
  "frame-support",
  "frame-system",
  "hex",
  "impl-trait-for-tuples",
+ "log",
  "pallet-balances",
  "pallet-contracts",
  "pallet-d9-node-voting",
@@ -4967,8 +4968,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-d9-node-voting"
-version = "0.1.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#bb58e458509fcfc530104ca298185c672b5cbda8"
+version = "1.0.0"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=2-merchant-points-get-voting#f1310db0661d0ce2b4c4812fc1ce42da28773b4a"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -4993,7 +4994,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-referral"
 version = "0.1.0-dev"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#bb58e458509fcfc530104ca298185c672b5cbda8"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#6065f663dc7cd93923a2749addd1f11b57fcf41e"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5012,7 +5013,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-treasury"
 version = "0.1.0-dev"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#bb58e458509fcfc530104ca298185c672b5cbda8"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#6065f663dc7cd93923a2749addd1f11b57fcf41e"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8805,7 +8806,7 @@ dependencies = [
 [[package]]
 name = "substrate-fixed"
 version = "0.5.9"
-source = "git+https://github.com/encointer/substrate-fixed#a75f3ba3f7c7893fb420500639cc055f964b1b88"
+source = "git+https://github.com/encointer/substrate-fixed#879c58bcc6fd676a74315dcd38b598f28708b0b5"
 dependencies = [
  "parity-scale-codec",
  "scale-info",

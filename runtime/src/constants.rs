@@ -113,7 +113,7 @@ pub const OFFENDING_VALIDATORS_THRESHOLD: Perbill = Perbill::from_percent(30);
 pub const MAX_UNLOCKING_CHUNKS: u32 = 15;
 
 //contracts
-pub const DEPOSIT_PER_ITEM: Balance = 20_000;
+pub const DEPOSIT_PER_ITEM: Balance = 1_000;
 pub const DEPOSIT_PER_BYTE: Balance = 1_000;
 pub const DEFAULT_DEPOSIT_LIMIT: Balance = 3 * D9_TOKEN;
 pub const MAX_CODE_SIZE: u32 = 500 * 1024;

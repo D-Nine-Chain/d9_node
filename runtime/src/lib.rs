@@ -606,9 +606,12 @@ impl ChainExtension<Runtime> for D9ChainExtension {
 				let current_validators_bytes = current_validators.encode();
 				let _ = env.write(&current_validators_bytes, false, None);
 			},
-			9=>{
-				let (vote_delegator, new_voting_interests):(AccountId, u64) = env.read_as()?;
-				pallet_d9_node_voting::Pallet::<Runtime>::add_voting_interests(vote_delegator, new_voting_interests);
+			9 => {
+				let (vote_delegator, new_voting_interests): (AccountId, u64) = env.read_as()?;
+				pallet_d9_node_voting::Pallet::<Runtime>::add_voting_interest_internal(
+					vote_delegator,
+					new_voting_interests,
+				);
 			},
 			_ => {
 				error!("Called an unregistered `func_id`: {:}", func_id);

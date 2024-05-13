@@ -64,7 +64,7 @@ pub const MAX_ON_CHAIN_ELECTABLE_TARGETS: u32 = 200;
 /// max N of voters
 pub const MAX_ON_CHAIN_ELECTING_VOTERS: u32 = 1000;
 /// Number of blocks constituting a session.
-pub const SESSION_PERIOD: BlockNumber = 1 * DAY;
+pub const SESSION_PERIOD: BlockNumber = 1 * MINUTE;
 /// Offset time before starting the next session.
 pub const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
 /// wait time in era duration until a slash is executed
@@ -113,8 +113,8 @@ pub const OFFENDING_VALIDATORS_THRESHOLD: Perbill = Perbill::from_percent(30);
 pub const MAX_UNLOCKING_CHUNKS: u32 = 15;
 
 //contracts
-pub const DEPOSIT_PER_ITEM: Balance = 1_000;
-pub const DEPOSIT_PER_BYTE: Balance = 1_000;
+pub const DEPOSIT_PER_ITEM: Balance = 100;
+pub const DEPOSIT_PER_BYTE: Balance = 100;
 pub const DEFAULT_DEPOSIT_LIMIT: Balance = 3 * D9_TOKEN;
 pub const MAX_CODE_SIZE: u32 = 500 * 1024;
 pub const MAX_STORAGE_KEY_LENGTH: u32 = 128;

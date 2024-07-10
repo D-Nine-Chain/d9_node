@@ -1,6 +1,6 @@
 [package]
 name = "d9-node-runtime"
-version = "1.0.0"
+version = "1.2.0"
 description = "a node to interact with the d9 chain"
 authors = ["D9 dev team"]
 homepage = "https://substrate.io/"

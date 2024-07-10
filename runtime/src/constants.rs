@@ -22,7 +22,7 @@ pub const WEEK: BlockNumber = DAY * 7;
 
 //currency
 pub const D9_BASE_SUB_UNIT: Balance = 1;
-pub const D9_TOKEN: Balance = 1_000_000;
+pub const D9_TOKEN: Balance = 1_000_000_000_000;
 pub const ONE_HUNDRED_D9_TOKENS: Balance = D9_TOKEN * 100;
 pub const ONE_THOUSAND_D9_TOKENS: Balance = D9_TOKEN * 1000;
 pub const ONE_MILLION_D9_TOKENS: Balance = D9_TOKEN * 1000000;
@@ -64,7 +64,7 @@ pub const MAX_ON_CHAIN_ELECTABLE_TARGETS: u32 = 200;
 /// max N of voters
 pub const MAX_ON_CHAIN_ELECTING_VOTERS: u32 = 1000;
 /// Number of blocks constituting a session.
-pub const SESSION_PERIOD: BlockNumber = 5 * MINUTE;
+pub const SESSION_PERIOD: BlockNumber = 1 * MINUTE;
 /// Offset time before starting the next session.
 pub const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
 /// wait time in era duration until a slash is executed

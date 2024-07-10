@@ -9,7 +9,7 @@ pub mod constants;
 pub use crate::constants::*;
 use frame_support::log::error;
 use frame_support::pallet_prelude::{Decode, Encode, RuntimeDebug};
-use frame_support::traits::AsEnsureOriginWithArg;
+use frame_support::traits::{AsEnsureOriginWithArg, EstimateNextSessionRotation};
 use frame_support::PalletId;
 use frame_system::EnsureRoot;
 use pallet_contracts::chain_extension::{
@@ -118,7 +118,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 117,
+	spec_version: 120,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -375,20 +375,44 @@ impl pallet_d9_council_lock::RankingProvider<AccountId> for RankingProvider {
 		pallet_session::Pallet::<Runtime>::current_index()
 	}
 }
+type Moment = <Runtime as pallet_timestamp::Config>::Moment;
+pub struct SessionTimeEstimator();
+impl pallet_d9_council_lock::SessionTimeEstimator<Runtime> for SessionTimeEstimator {
+	fn est_session_total_duration() -> Moment {
+		Moment::from(MILLISECS_PER_BLOCK.saturating_mul(SESSION_PERIOD as u64))
+	}
+
+	fn est_current_session_remaining_duration() -> Option<Moment> {
+		let current_block_num: BlockNumber = frame_system::Pallet::<Runtime>::block_number();
+		let (possible_block_estimate, _) =
+			PeriodicSessions::estimate_next_session_rotation(current_block_num);
+		match possible_block_estimate {
+			Some(est_next_session_start_block) => {
+				let block_difference =
+					est_next_session_start_block.saturating_sub(current_block_num);
+				Some(MILLISECS_PER_BLOCK.saturating_mul(block_difference as u64))
+			},
+			None => None,
+		}
+	}
+}
+
 parameter_types! {
 pub const LockIdentifier: [u8; 8] = *b"council/";
 pub const CouncilPalletId: PalletId = PalletId(*b"council/");
 pub const VotingCouncilSize:u32 = 27;
 pub const MinNominatorRank: u32 = 127;
-pub const AssentingVotesThreshold:u32 =  19;
+pub const AssentingVotesThreshold:u32 =  2;//19
 pub const NumberOfSessionsBeforeVote:u32 = 2;
-pub const DissentingVotesThreshold:u32 = 10;
+pub const DissentingVotesThreshold:u32 = 2;//10
+pub const ProposalFee: Balance = 1 * D9_TOKEN;
 }
 impl pallet_d9_council_lock::Config for Runtime {
 	type LockIdentifier = LockIdentifier;
 	type Currency = Balances;
 	type LockableCurrency = Balances;
 	type RuntimeEvent = RuntimeEvent;
+	type ProposalFee = ProposalFee;
 	type CouncilPalletId = CouncilPalletId;
 	type VotingCouncilSize = VotingCouncilSize;
 	type MinNominatorRank = MinNominatorRank;
@@ -396,6 +420,7 @@ impl pallet_d9_council_lock::Config for Runtime {
 	type DissentingVotesThreshold = DissentingVotesThreshold;
 	type RankingProvider = RankingProvider;
 	type NumberOfSessionsBeforeVote = NumberOfSessionsBeforeVote;
+	type SessionTimeEstimator = SessionTimeEstimator;
 }
 pub struct ReferendumManager();
 impl pallet_d9_node_voting::ReferendumManager for ReferendumManager {

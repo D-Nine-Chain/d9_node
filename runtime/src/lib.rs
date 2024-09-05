@@ -224,6 +224,7 @@ impl pallet_grandpa::Config for Runtime {
 	type KeyOwnerProof = sp_core::Void;
 	type EquivocationReportSystem = ();
 }
+
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }

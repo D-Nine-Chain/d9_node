@@ -2,7 +2,9 @@
   "name": "TESTNET_D9",
   "id": "testnet_d9",
   "chainType": "Development",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/44.204.49.220/tcp/4010/p2p/12D3KooWPZZ2y3Vu4qoBQNqiTjTY9V1r2a1ksrUwuXk9rjfHnkKD"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "testnet_d9",
   "forkId": "testnet_d9",

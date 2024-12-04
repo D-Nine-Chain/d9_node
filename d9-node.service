@@ -1,10 +1,10 @@
 [Unit]
-Description=D9 Node
+Description=D9 Testnet Node
 After=network-online.target
 
 [Service]
-User=ubuntu  
-ExecStart=/home/ubuntu/d9-node/target/release/d9-node --base-path /home/ubuntu/node-data --chain /home/ubuntu/d9-node/main-spec.json --port 40100 --validator --node-key 
+User=ubuntu
+ExecStart=/home/ubuntu/d9-node/target/debug/d9-node --base-path /home/ubuntu/node-data --chain /home/ubuntu/d9-node/testnet-spec.json --port 4010 --validator --alice
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=4096

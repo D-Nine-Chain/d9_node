@@ -1,13 +1,14 @@
 use d9_node_runtime::{
+	opaque::SessionKeys,
 	AccountId,
 	AssetsConfig,
 	AuraConfig,
 	AuthorityDiscoveryConfig,
 	BalancesConfig,
-	D9ReferralConfig,
 	CollectiveConfig,
-	D9TreasuryConfig,
 	D9NodeVotingConfig,
+	D9ReferralConfig,
+	D9TreasuryConfig,
 	GenesisConfig,
 	GrandpaConfig,
 	ImOnlineConfig,
@@ -19,17 +20,16 @@ use d9_node_runtime::{
 	SystemConfig,
 	TreasuryConfig,
 	WASM_BINARY,
-	opaque::SessionKeys,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{ sr25519, Pair, Public };
-use sp_runtime::traits::{ IdentifyAccount, Verify };
+use sp_core::{sr25519, Pair, Public};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 // use sp_runtime::Perbill;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sc_chain_spec::Properties;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -47,7 +47,8 @@ type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-	where AccountPublic: From<<TPublic::Pair as Pair>::Public>
+where
+	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
@@ -85,7 +86,7 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 /// cryptographic functions employed by `get_from_seed`. Ensure a secure and unique
 /// seed for actual usage in a live environment.
 pub fn authority_keys_from_seed(
-	s: &str
+	s: &str,
 ) -> (AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId) {
 	(
 		get_account_id_from_seed::<sr25519::Public>(s),
@@ -101,7 +102,7 @@ fn session_keys(
 	aura: AuraId,
 	grandpa: GrandpaId,
 	im_online: ImOnlineId,
-	authority_discovery: AuthorityDiscoveryId
+	authority_discovery: AuthorityDiscoveryId,
 ) -> SessionKeys {
 	SessionKeys { aura, grandpa, im_online, authority_discovery }
 }
@@ -111,145 +112,139 @@ pub fn live_config() -> Result<ChainSpec, String> {
 	properties.insert("tokenSymbol".into(), "D9".into());
 	properties.insert("tokenDecimals".into(), (12).into());
 	properties.insert("ss58Format".into(), (9).into());
-	Ok(
-		ChainSpec::from_genesis(
-			// Name
-			"D9",
-			// ID
-			"d9_main",
-			ChainType::Live,
-			move || {
-				network_genesis(
-					wasm_binary,
-					// Initial PoA authorities
-					vec![
-						authority_keys_from_seed(""),
-						authority_keys_from_seed(""),
-						authority_keys_from_seed("")
-					],
-					// Sudo account
-					get_account_id_from_seed::<sr25519::Public>(""),
-					// Pre-funded accounts
-					vec![get_account_id_from_seed::<sr25519::Public>("")],
-					true
-				)
-			},
-			// Bootnodes
-			vec![],
-			// Telemetry
-			None,
-			// Protocol ID
-			Some("D9_main"),
-			//fork ID
-			Some("d9_main"),
-			// Properties
-			Some(properties),
-			// Extensions
-			None
-		)
-	)
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"D9",
+		// ID
+		"d9_main",
+		ChainType::Live,
+		move || {
+			network_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				vec![
+					authority_keys_from_seed(""),
+					authority_keys_from_seed(""),
+					authority_keys_from_seed(""),
+				],
+				// Sudo account
+				get_account_id_from_seed::<sr25519::Public>(""),
+				// Pre-funded accounts
+				vec![get_account_id_from_seed::<sr25519::Public>("")],
+				true,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("D9_main"),
+		//fork ID
+		Some("d9_main"),
+		// Properties
+		Some(properties),
+		// Extensions
+		None,
+	))
 }
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 	let mut properties = Properties::new();
-	properties.insert("tokenSymbol".into(), "D9".into());
+	properties.insert("tokenSymbol".into(), "D9_t".into());
 	properties.insert("tokenDecimals".into(), (12).into());
 	properties.insert("ss58Format".into(), (9).into());
-	Ok(
-		ChainSpec::from_genesis(
-			// Name
-			"dev_d9_v2",
-			// ID
-			"dev_d9_v2",
-			ChainType::Development,
-			move || {
-				network_genesis(
-					wasm_binary,
-					// Initial PoA authorities
-					vec![
-						authority_keys_from_seed("Alice"),
-						authority_keys_from_seed("Bob"),
-						authority_keys_from_seed("Charlie")
-					],
-					// Sudo account
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"TESTNET_D9",
+		// ID
+		"testnet_d9",
+		ChainType::Development,
+		move || {
+			network_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				vec![
+					authority_keys_from_seed("Alice"),
+					authority_keys_from_seed("Bob"),
+					authority_keys_from_seed("Charlie"),
+				],
+				// Sudo account
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// Pre-funded accounts
+				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie")
-					],
-					true
-				)
-			},
-			// Bootnodes
-			vec![],
-			// Telemetry
-			None,
-			// Protocol ID
-			Some("dev_D9_v2"),
-			//fork ID
-			Some("dev_d9_v2"),
-			// Properties
-			Some(properties),
-			// Extensions
-			None
-		)
-	)
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				],
+				true,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("testnet_d9"),
+		//fork ID
+		Some("testnet_d9"),
+		// Properties
+		Some(properties),
+		// Extensions
+		None,
+	))
 }
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
-	Ok(
-		ChainSpec::from_genesis(
-			// Name
-			"local_d9",
-			// ID
-			"local_d9",
-			ChainType::Local,
-			move || {
-				network_genesis(
-					wasm_binary,
-					// Initial PoA authorities
-					vec![
-						authority_keys_from_seed("Alice"),
-						authority_keys_from_seed("Bob"),
-						authority_keys_from_seed("Charlie")
-					],
-					// Sudo account
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"local_d9",
+		// ID
+		"local_d9",
+		ChainType::Local,
+		move || {
+			network_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				vec![
+					authority_keys_from_seed("Alice"),
+					authority_keys_from_seed("Bob"),
+					authority_keys_from_seed("Charlie"),
+				],
+				// Sudo account
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// Pre-funded accounts
+				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						get_account_id_from_seed::<sr25519::Public>("Dave"),
-						get_account_id_from_seed::<sr25519::Public>("Eve"),
-						get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash")
-					],
-					true
-				)
-			},
-			// Bootnodes
-			vec![],
-			// Telemetry
-			None,
-			// Protocol ID
-			None,
-			// Properties
-			None,
-			None,
-			// Extensions
-			None
-		)
-	)
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				true,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Properties
+		None,
+		None,
+		// Extensions
+		None,
+	))
 }
 
 /// Configure initial storage state for FRAME modules.
@@ -258,24 +253,17 @@ fn network_genesis(
 	initial_authorities: Vec<(AccountId, AuraId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
-	_enable_println: bool
+	_enable_println: bool,
 ) -> GenesisConfig {
 	GenesisConfig {
-		assets: AssetsConfig {
-			..Default::default()
-		},
+		assets: AssetsConfig { ..Default::default() },
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
 		},
-		d9_referral: D9ReferralConfig {
-			..Default::default()
-		},
+		d9_referral: D9ReferralConfig { ..Default::default() },
 		d9_node_voting: D9NodeVotingConfig {
-			initial_candidates: initial_authorities
-				.iter()
-				.map(|x| x.0.clone())
-				.collect(),
+			initial_candidates: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 		},
 
 		balances: BalancesConfig {
@@ -287,18 +275,16 @@ fn network_genesis(
 				.collect(),
 		},
 		aura: AuraConfig {
-			..Default::default()
-			// authorities: initial_authorities
-			// 	.iter()
-			// 	.map(|x| x.1.clone())
-			// 	.collect(),
+			..Default::default() // authorities: initial_authorities
+			                     // 	.iter()
+			                     // 	.map(|x| x.1.clone())
+			                     // 	.collect(),
 		},
 		grandpa: GrandpaConfig {
-			..Default::default()
-			// authorities: initial_authorities
-			// 	.iter()
-			// 	.map(|x| (x.2.clone(), 1))
-			// 	.collect(),
+			..Default::default() // authorities: initial_authorities
+			                     // 	.iter()
+			                     // 	.map(|x| (x.2.clone(), 1))
+			                     // 	.collect(),
 		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
@@ -326,27 +312,16 @@ fn network_genesis(
 		// phragmen_elections: PhragmenElectionsConfig {
 		// 	members: vec![],
 		// },
-		d9_treasury: D9TreasuryConfig {
-			treasurer: Some(root_key.clone()),
-			..Default::default()
-		},
+		d9_treasury: D9TreasuryConfig { treasurer: Some(root_key.clone()), ..Default::default() },
 		transaction_payment: Default::default(),
-		collective: CollectiveConfig {
-			members: vec![],
-			phantom: Default::default(),
-		},
-		treasury: TreasuryConfig {
-			..Default::default()
-		},
-		im_online: ImOnlineConfig {
-			..Default::default()
-		},
+		collective: CollectiveConfig { members: vec![], phantom: Default::default() },
+		treasury: TreasuryConfig { ..Default::default() },
+		im_online: ImOnlineConfig { ..Default::default() },
 		authority_discovery: AuthorityDiscoveryConfig {
-			..Default::default()
-			// keys: initial_authorities
-			// 	.iter()
-			// 	.map(|x| { x.5.clone() })
-			// 	.collect::<Vec<_>>(),
+			..Default::default() // keys: initial_authorities
+			                     // 	.iter()
+			                     // 	.map(|x| { x.5.clone() })
+			                     // 	.collect::<Vec<_>>(),
 		},
 	}
 }

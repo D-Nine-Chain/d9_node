@@ -9,7 +9,7 @@ pub mod constants;
 pub use crate::constants::*;
 use frame_support::log::error;
 use frame_support::pallet_prelude::{Decode, Encode, RuntimeDebug};
-use frame_support::traits::AsEnsureOriginWithArg;
+use frame_support::traits::{AsEnsureOriginWithArg, EstimateNextSessionRotation};
 use frame_support::PalletId;
 use frame_system::EnsureRoot;
 use pallet_contracts::chain_extension::{
@@ -118,7 +118,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 116,
+	spec_version: 117,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -224,6 +224,7 @@ impl pallet_grandpa::Config for Runtime {
 	type KeyOwnerProof = sp_core::Void;
 	type EquivocationReportSystem = ();
 }
+
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
@@ -366,6 +367,71 @@ impl pallet_d9_node_rewards::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type PalletId = NodeRewardPalletId;
 }
+pub struct RankingProvider();
+impl pallet_d9_council_lock::RankingProvider<AccountId> for RankingProvider {
+	fn get_ranked_nodes() -> Option<Vec<AccountId>> {
+		pallet_d9_node_voting::Pallet::<Runtime>::get_sorted_candidates()
+	}
+	fn current_session_index() -> SessionIndex {
+		pallet_session::Pallet::<Runtime>::current_index()
+	}
+}
+type Moment = <Runtime as pallet_timestamp::Config>::Moment;
+pub struct SessionTimeEstimator();
+impl pallet_d9_council_lock::SessionTimeEstimator<Runtime> for SessionTimeEstimator {
+	fn est_session_total_duration() -> Moment {
+		Moment::from(MILLISECS_PER_BLOCK.saturating_mul(SESSION_PERIOD as u64))
+	}
+
+	fn est_current_session_remaining_duration() -> Option<Moment> {
+		let current_block_num: BlockNumber = frame_system::Pallet::<Runtime>::block_number();
+		let (possible_block_estimate, _) =
+			PeriodicSessions::estimate_next_session_rotation(current_block_num);
+		match possible_block_estimate {
+			Some(est_next_session_start_block) => {
+				let block_difference =
+					est_next_session_start_block.saturating_sub(current_block_num);
+				Some(MILLISECS_PER_BLOCK.saturating_mul(block_difference as u64))
+			},
+			None => None,
+		}
+	}
+}
+
+parameter_types! {
+pub const LockIdentifier: [u8; 8] = *b"council/";
+pub const CouncilPalletId: PalletId = PalletId(*b"council/");
+pub const VotingCouncilSize:u32 = 27;
+pub const MinNominatorRank: u32 = 127;
+pub const AssentingVotesThreshold:u32 =  2;//19
+pub const NumberOfSessionsBeforeVote:u32 = 2;
+pub const DissentingVotesThreshold:u32 = 2;//10
+pub const ProposalFee: Balance = 1 * D9_TOKEN;
+}
+impl pallet_d9_council_lock::Config for Runtime {
+	type LockIdentifier = LockIdentifier;
+	type Currency = Balances;
+	type LockableCurrency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	type ProposalFee = ProposalFee;
+	type CouncilPalletId = CouncilPalletId;
+	type VotingCouncilSize = VotingCouncilSize;
+	type MinNominatorRank = MinNominatorRank;
+	type AssentingVotesThreshold = AssentingVotesThreshold;
+	type DissentingVotesThreshold = DissentingVotesThreshold;
+	type RankingProvider = RankingProvider;
+	type NumberOfSessionsBeforeVote = NumberOfSessionsBeforeVote;
+	type SessionTimeEstimator = SessionTimeEstimator;
+}
+pub struct ReferendumManager();
+impl pallet_d9_node_voting::ReferendumManager for ReferendumManager {
+	fn start_pending_votes(session_index: SessionIndex) {
+		pallet_d9_council_lock::Pallet::<Runtime>::start_pending_votes(session_index);
+	}
+	fn end_active_votes(session_index: SessionIndex) {
+		pallet_d9_council_lock::Pallet::<Runtime>::end_active_votes(session_index);
+	}
+}
 parameter_types! {
 	pub const CurrencySubUnits: u128 = 1_000_000_000_000;
 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
@@ -378,6 +444,7 @@ impl pallet_d9_node_voting::Config for Runtime {
 	type MaxCandidates = MaxCandidates;
 	type MaxValidatorNodes = MaxValidatorNodes;
 	type NodeRewardManager = D9NodeRewards;
+	type ReferendumManager = ReferendumManager;
 }
 parameter_types! {
 	pub const Period: BlockNumber = SESSION_PERIOD;
@@ -443,43 +510,6 @@ where
 	type Extrinsic = UncheckedExtrinsic;
 	type OverarchingCall = RuntimeCall;
 }
-// impl pallet_offences::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
-// 	type OnOffenceHandler = ();
-// }
-
-// parameter_types! {
-// 	pub const ElectionPalletId: LockIdentifier = *b"election";
-// 	pub const CandidacyBond: Balance = CANDIDACY_BOND;
-// 	pub const VotingBondBase: Balance = VOTING_BOND_BASE;
-// 	pub const VotingBondFactor: Balance = VOTING_BOND_FACTOR;
-// 	pub const DesiredMembers: u32 = MAX_VALIDATOR_NODES;
-// 	pub const DesiredRunnersUp: u32 = DESIRED_RUNNERS_UP;
-// 	pub const TermDuration: BlockNumber = SESSION_PERIOD;
-// 	pub const MaxCandidates: u32 = MAX_CANDIDATES;
-// 	pub const MaxVotesPerVoter: u32 = MAX_VOTES_PER_VOTER;
-// }
-// impl pallet_elections_phragmen::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent; // Defines the event type for the runtime, which includes events from all pallets.
-// 	type PalletId = ElectionPalletId; // The unique identifier for this pallet, used for creating unique storage keys.
-// 	type Currency = Balances; // The currency used for transactions within this pallet (like candidacy bonds).
-// 	type ChangeMembers = Collective; // The type which should be informed of changes to the set of elected members.
-// 	type InitializeMembers = Collective; // The type that sets the initial membership set, usually implemented by the session manager.
-// 	type CurrencyToVote = U128CurrencyToVote; // Used for converting balances to a vote weight for nuanced voting algorithms.
-// 	type CandidacyBond = CandidacyBond; // The amount of currency to be locked up for submitting a candidacy.
-// 	type VotingBondBase = VotingBondBase; // The base amount of currency to be locked up for being allowed to vote.
-// 	type VotingBondFactor = VotingBondFactor; // A factor multiplied with the number of votes to derive the final amount of currency to be locked up for voting.
-// 	type LoserCandidate = (); // The trait called when a candidate does not get elected.
-// 	type KickedMember = (); // The trait called when a member gets kicked out.
-// 	type DesiredMembers = DesiredMembers;
-// 	type DesiredRunnersUp = DesiredRunnersUp;
-// 	type TermDuration = TermDuration; // Defines how long each round (or "term") should last.
-// 	type MaxCandidates = MaxCandidates; // The maximum number of candidates that can be registered for an election round.
-// 	type MaxVoters = ();
-// 	type MaxVotesPerVoter = MaxVotesPerVoter;
-// 	type WeightInfo = (); // Weights for this pallet's functions. TODO[epic=staking,seq=292] Staking WeightInfo
-// }
 
 parameter_types! {
 	pub const MaxSpendPerTransaction: Balance = 1 * ONE_MILLION_D9_TOKENS;
@@ -709,6 +739,7 @@ construct_runtime!(
 		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
 		Session: pallet_session,
 		Treasury: pallet_treasury,
+		CouncilLock: pallet_d9_council_lock,
 	}
 );
 

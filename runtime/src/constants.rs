@@ -2,10 +2,8 @@
 //! this is not to be used for pallets constants that is to be defined in parameter_types!
 
 use crate::{Balance, BlockNumber};
-use crate::{Balance, BlockNumber};
 use frame_support::traits::LockIdentifier;
 use sp_runtime::Perbill;
-use sp_staking::{EraIndex, SessionIndex};
 use sp_staking::{EraIndex, SessionIndex};
 
 //chain
@@ -66,7 +64,7 @@ pub const MAX_ON_CHAIN_ELECTABLE_TARGETS: u32 = 200;
 /// max N of voters
 pub const MAX_ON_CHAIN_ELECTING_VOTERS: u32 = 1000;
 /// Number of blocks constituting a session.
-pub const SESSION_PERIOD: BlockNumber = 10 * MINUTE;
+pub const SESSION_PERIOD: BlockNumber = 3 * MINUTE;
 /// Offset time before starting the next session.
 pub const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
 /// wait time in era duration until a slash is executed

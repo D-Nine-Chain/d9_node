@@ -7,6 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod constants;
 pub use crate::constants::*;
+
 use frame_support::log::error;
 use frame_support::pallet_prelude::{Decode, Encode, RuntimeDebug};
 use frame_support::traits::{AsEnsureOriginWithArg, EstimateNextSessionRotation};
@@ -283,7 +284,21 @@ impl pallet_d9_balances::Config for Runtime {
 	type HoldIdentifier = ();
 	type ReferralManager = Self;
 }
-
+parameter_types! {
+	pub const MaxSignatories: u32 = 23;
+	pub const MaxPendingCalls: u32 = 5;
+	pub const MaxMultiSigsPerAccountId: u32 = 10;
+	pub const MaxCallSize: u32 = 100; // maximum size in bytes for a call
+}
+// The multi-sig pallet's extrinsics are part of `RuntimeCall` once constructed.
+impl pallet_d9_multi_sig::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxSignatories = MaxSignatories;
+	type MaxPendingCalls = MaxPendingCalls;
+	type MaxMultiSigsPerAccountId = MaxMultiSigsPerAccountId;
+	type RuntimeCall = RuntimeCall; // from construct_runtime
+	type MaxCallSize = MaxCallSize;
+}
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
    pub const OperationalFeeMultiplier:u8 = 5;
@@ -696,20 +711,20 @@ impl pallet_contracts::Config for Runtime {
 	type Migrations = (NoopMigration<1>, NoopMigration<2>);
 }
 
-parameter_types! {
-	pub const DepositBase: Balance = 1 * D9_TOKEN;
-	pub const DepositFactor: Balance = 1 * D9_TOKEN;
-	pub const MaxSignatories: u32 = 100;
-}
-impl pallet_multisig::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type Currency = Balances;
-	type DepositBase = DepositBase;
-	type DepositFactor = DepositFactor;
-	type MaxSignatories = MaxSignatories;
-	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
-}
+// parameter_types! {
+// 	pub const DepositBase: Balance = 1 * D9_TOKEN;
+// 	pub const DepositFactor: Balance = 1 * D9_TOKEN;
+// 	pub const MaxSignatories: u32 = 100;
+// }
+// impl pallet_multisig::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type RuntimeCall = RuntimeCall;
+// 	type Currency = Balances;
+// 	type DepositBase = DepositBase;
+// 	type DepositFactor = DepositFactor;
+// 	type MaxSignatories = MaxSignatories;
+// 	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+// }
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -725,7 +740,7 @@ construct_runtime!(
 		D9NodeRewards: pallet_d9_node_rewards,
 		Balances: pallet_d9_balances,
 		Grandpa: pallet_grandpa,
-		MultiSig: pallet_multisig,
+		// MultiSig: pallet_multisig,
 		Sudo: pallet_sudo,
 		System: frame_system,
 		Timestamp: pallet_timestamp,
@@ -740,6 +755,7 @@ construct_runtime!(
 		Session: pallet_session,
 		Treasury: pallet_treasury,
 		CouncilLock: pallet_d9_council_lock,
+		D9MultiSig: pallet_d9_multi_sig,
 	}
 );
 

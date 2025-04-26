@@ -71,7 +71,7 @@ pallet-treasury = { version = "4.0.0-dev", default-features = false, git = "http
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.42" }
 pallet-d9-referral = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                      #d9 assets
 pallet-d9-treasury = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                      #d9 assets
-pallet-d9-balances = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                      #d9 assets
+pallet-d9-balances = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false, branch="8-currency-lock-fix" }                                                      #d9 assets
 pallet-d9-node-voting = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }
 pallet-d9-council-lock = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }                                                  #d9 assets
 pallet-d9-node-rewards = { version = "^1.0.0", git = "https://github.com/D-Nine-Chain/d9_pallets.git", default-features = false }

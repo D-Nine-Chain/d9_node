@@ -1,10 +1,10 @@
 //! constants module is set for runtime constants.
 //! this is not to be used for pallets constants that is to be defined in parameter_types!
 
-use crate::{Balance, BlockNumber};
 use frame_support::traits::LockIdentifier;
 use sp_runtime::Perbill;
-use sp_staking::{EraIndex, SessionIndex};
+use sp_staking::{ SessionIndex, EraIndex };
+use crate::{ Balance, BlockNumber };
 
 //chain
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
@@ -22,7 +22,7 @@ pub const WEEK: BlockNumber = DAY * 7;
 
 //currency
 pub const D9_BASE_SUB_UNIT: Balance = 1;
-pub const D9_TOKEN: Balance = 1_000_000_000_000;
+pub const D9_TOKEN: Balance = 1_000_000;
 pub const ONE_HUNDRED_D9_TOKENS: Balance = D9_TOKEN * 100;
 pub const ONE_THOUSAND_D9_TOKENS: Balance = D9_TOKEN * 1000;
 pub const ONE_MILLION_D9_TOKENS: Balance = D9_TOKEN * 1000000;
@@ -64,7 +64,7 @@ pub const MAX_ON_CHAIN_ELECTABLE_TARGETS: u32 = 200;
 /// max N of voters
 pub const MAX_ON_CHAIN_ELECTING_VOTERS: u32 = 1000;
 /// Number of blocks constituting a session.
-pub const SESSION_PERIOD: BlockNumber = 3 * MINUTE;
+pub const SESSION_PERIOD: BlockNumber = 1 * DAY;
 /// Offset time before starting the next session.
 pub const SESSION_OFFSET: BlockNumber = 1 * MINUTE;
 /// wait time in era duration until a slash is executed

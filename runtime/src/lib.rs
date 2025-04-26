@@ -419,7 +419,7 @@ pub const CouncilPalletId: PalletId = PalletId(*b"council/");
 pub const VotingCouncilSize:u32 = 27;
 pub const MinNominatorRank: u32 = 127;
 pub const AssentingVotesThreshold:u32 =  2;//19
-pub const NumberOfSessionsBeforeVote:u32 = 1;
+pub const NumberOfSessionsBeforeVote:u32 = 2;
 pub const DissentingVotesThreshold:u32 = 2;//10
 pub const ProposalFee: Balance = 1 * D9_TOKEN;
 }

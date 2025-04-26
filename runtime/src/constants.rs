@@ -1,10 +1,10 @@
 //! constants module is set for runtime constants.
 //! this is not to be used for pallets constants that is to be defined in parameter_types!
 
+use crate::{Balance, BlockNumber};
 use frame_support::traits::LockIdentifier;
 use sp_runtime::Perbill;
-use sp_staking::{ SessionIndex, EraIndex };
-use crate::{ Balance, BlockNumber };
+use sp_staking::{EraIndex, SessionIndex};
 
 //chain
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
@@ -22,7 +22,7 @@ pub const WEEK: BlockNumber = DAY * 7;
 
 //currency
 pub const D9_BASE_SUB_UNIT: Balance = 1;
-pub const D9_TOKEN: Balance = 1_000_000;
+pub const D9_TOKEN: Balance = 1_000_000_000_000;
 pub const ONE_HUNDRED_D9_TOKENS: Balance = D9_TOKEN * 100;
 pub const ONE_THOUSAND_D9_TOKENS: Balance = D9_TOKEN * 1000;
 pub const ONE_MILLION_D9_TOKENS: Balance = D9_TOKEN * 1000000;

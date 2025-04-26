@@ -51,7 +51,18 @@ first clone this repo:
 ```shell
 git clone https://github.com/D-Nine-Chain/d9_node.git
 ```
-
+```
+sudo apt-get update
+```
+```
+sudo apt install build-essential
+```
+```
+sudo apt  install protobuf-compiler
+```
+```
+sudo apt-get install clang
+```
 then build:
 
 ```sh

@@ -119,7 +119,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 122,
+	spec_version: 124,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -420,8 +420,8 @@ pub const VotingCouncilSize:u32 = 27;
 pub const MinNominatorRank: u32 = 127;
 pub const AssentingVotesThreshold:u32 =  19;
 pub const NumberOfSessionsBeforeVote:u32 = 2;
-pub const DissentingVotesThreshold:u32 = 2;//10
-pub const ProposalFee: Balance = 1 * D9_TOKEN;
+pub const DissentingVotesThreshold:u32 = 9;
+pub const ProposalFee: Balance = 1000_000_000_000_000;
 }
 impl pallet_d9_council_lock::Config for Runtime {
 	type LockIdentifier = LockIdentifier;

@@ -1512,7 +1512,7 @@ dependencies = [
 
 [[package]]
 name = "d9-node-runtime"
-version = "2.1.2"
+version = "2.1.3"
 dependencies = [
  "errno",
  "frame-benchmarking",
@@ -1530,12 +1530,12 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-d9-balances 1.2.2 (git+https://github.com/D-Nine-Chain/d9_pallets.git)",
+ "pallet-d9-balances",
  "pallet-d9-council-lock",
  "pallet-d9-multi-sig",
  "pallet-d9-node-rewards",
  "pallet-d9-node-voting",
- "pallet-d9-referral 1.0.0 (git+https://github.com/D-Nine-Chain/d9_pallets.git)",
+ "pallet-d9-referral",
  "pallet-d9-treasury",
  "pallet-elections-phragmen",
  "pallet-grandpa",
@@ -5196,29 +5196,13 @@ dependencies = [
 [[package]]
 name = "pallet-d9-balances"
 version = "1.2.2"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=9-lock-on-proposal#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-d9-referral 1.0.0 (git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=9-lock-on-proposal)",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
- "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-d9-balances"
-version = "1.2.2"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#272ffea150a70a8553cf8d0dae4f1e36d2887a7e"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-d9-referral 1.0.0 (git+https://github.com/D-Nine-Chain/d9_pallets.git)",
+ "pallet-d9-referral",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
@@ -5228,7 +5212,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-council-lock"
 version = "1.0.8"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=9-lock-on-proposal#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5236,7 +5220,7 @@ dependencies = [
  "frame-system",
  "hex",
  "impl-trait-for-tuples",
- "pallet-d9-balances 1.2.2 (git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=9-lock-on-proposal)",
+ "pallet-d9-balances",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -5276,7 +5260,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-node-rewards"
 version = "1.0.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#272ffea150a70a8553cf8d0dae4f1e36d2887a7e"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
 dependencies = [
  "frame-election-provider-support",
  "frame-support",
@@ -5301,7 +5285,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-node-voting"
 version = "1.3.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#272ffea150a70a8553cf8d0dae4f1e36d2887a7e"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5326,26 +5310,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-referral"
 version = "1.0.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git?branch=9-lock-on-proposal#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "pallet-treasury",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-api",
- "sp-runtime",
- "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-d9-referral"
-version = "1.0.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#272ffea150a70a8553cf8d0dae4f1e36d2887a7e"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5364,7 +5329,7 @@ dependencies = [
 [[package]]
 name = "pallet-d9-treasury"
 version = "1.0.0"
-source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#272ffea150a70a8553cf8d0dae4f1e36d2887a7e"
+source = "git+https://github.com/D-Nine-Chain/d9_pallets.git#420598b23dfe5e4b6b4fba07868b7bc18a8a2de7"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

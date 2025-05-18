@@ -15,3 +15,5 @@
 **/tmp
 **/*-state
 **/*_state
+
+**/.claude/settings.local.json

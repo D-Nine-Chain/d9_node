@@ -1,0 +1,8 @@
+# Test workflow configuration for act
+workflow: .github/workflows/build-and-release.yml
+job: notify
+eventpath: act-event.json
+platforms:
+  - ubuntu-latest=catthehacker/ubuntu:act-latest
+secret-file: .secrets.act
+container-architecture: linux/amd64

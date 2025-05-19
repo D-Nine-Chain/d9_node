@@ -1,0 +1,17 @@
+{
+  "ref": "refs/heads/main",
+  "repository": {
+    "name": "d9_node",
+    "owner": {
+      "login": "D-Nine-Chain"
+    }
+  },
+  "workflow": "build-and-release.yml",
+  "server_url": "https://github.com",
+  "run_id": "12345",
+  "needs": {
+    "build": {
+      "result": "success"
+    }
+  }
+}

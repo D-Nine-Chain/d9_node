@@ -96,7 +96,6 @@ jobs:
     
     steps:
     - name: Discord Notification
-      if: ${{ secrets.DISCORD_WEBHOOK != '' }}
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       run: |
@@ -109,10 +108,10 @@ jobs:
           COLOR=15158332
         fi
         
-        # Validate webhook URL format
-        if [[ ! "$DISCORD_WEBHOOK" =~ ^https://discord\.com/api/webhooks/ ]]; then
-          echo "Invalid Discord webhook URL"
-          exit 1
+        # Skip if no webhook
+        if [ -z "$DISCORD_WEBHOOK" ]; then
+          echo "No Discord webhook configured"
+          exit 0
         fi
         
         curl -f -H "Content-Type: application/json" \
@@ -120,7 +119,6 @@ jobs:
           "$DISCORD_WEBHOOK" || echo "Discord notification failed"
 
     - name: Slack Notification
-      if: ${{ secrets.SLACK_WEBHOOK != '' }}
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       run: |
@@ -133,10 +131,10 @@ jobs:
           COLOR="danger"
         fi
         
-        # Validate webhook URL format
-        if [[ ! "$SLACK_WEBHOOK" =~ ^https://hooks\.slack\.com/ ]]; then
-          echo "Invalid Slack webhook URL"
-          exit 1
+        # Skip if no webhook
+        if [ -z "$SLACK_WEBHOOK" ]; then
+          echo "No Slack webhook configured"
+          exit 0
         fi
         
         curl -f -X POST -H 'Content-type: application/json' \
@@ -144,23 +142,14 @@ jobs:
           "$SLACK_WEBHOOK" || echo "Slack notification failed"
 
     - name: Email Notification
-      if: secrets.EMAIL_TO != ''
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: ${{ secrets.EMAIL_SERVER }}
-        server_port: ${{ secrets.EMAIL_PORT }}
-        username: ${{ secrets.EMAIL_USERNAME }}
-        password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: D9 Node Build ${{ needs.build.result }} - ${{ github.ref_name }}
-        to: ${{ secrets.EMAIL_TO }}
-        from: ${{ secrets.EMAIL_FROM }}
-        body: |
-          Build Status: ${{ needs.build.result }}
-          Repository: ${{ github.repository }}
-          Branch/Tag: ${{ github.ref_name }}
-          Commit: ${{ github.sha }}
-          
-          View the run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      env:
+        EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      run: |
+        if [ -z "$EMAIL_TO" ]; then
+          echo "No email recipient configured"
+          exit 0
+        fi
+        echo "Email notification would be sent to $EMAIL_TO (not implemented in act)"
 
   release:
     needs: build

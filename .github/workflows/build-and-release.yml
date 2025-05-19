@@ -83,25 +83,26 @@ jobs:
         sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     - name: Build
-      env:
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-        AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
-        CARGO_TARGET_DIR: target
-        CARGO_NET_GIT_FETCH_WITH_CLI: "true"
       run: |
         # Set up environment based on target architecture
         if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
-          export CC=aarch64-linux-gnu-gcc
-          export CXX=aarch64-linux-gnu-g++
-          export AR=aarch64-linux-gnu-ar
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+          export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
+          export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
           export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu
           export C_INCLUDE_PATH=/usr/include/aarch64-linux-gnu
+          export CARGO_TARGET_DIR=target
+          export CARGO_NET_GIT_FETCH_WITH_CLI=true
         else
+          export CC_x86_64_unknown_linux_gnu=gcc-11
+          export CXX_x86_64_unknown_linux_gnu=g++-11
+          export AR_x86_64_unknown_linux_gnu=ar
+          export CXXFLAGS="-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
           export CC=gcc-11
           export CXX=g++-11
-          export CXXFLAGS="-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
+          export CARGO_TARGET_DIR=target
+          export CARGO_NET_GIT_FETCH_WITH_CLI=true
         fi
         cargo build --release --target ${{ matrix.target }}
 

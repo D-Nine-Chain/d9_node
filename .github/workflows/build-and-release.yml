@@ -71,7 +71,11 @@ jobs:
     - name: Install build dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y pkg-config protobuf-compiler libclang-dev
+        sudo apt-get install -y pkg-config protobuf-compiler libclang-dev build-essential cmake libc++-dev libc++abi-dev
+        # Ensure we have the right compiler version
+        sudo apt-get install -y gcc-11 g++-11
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
 
     - name: Install cross-compilation tools
       if: matrix.arch == 'aarch64'
@@ -85,6 +89,10 @@ jobs:
         CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
         AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
         CARGO_TARGET_DIR: target
+        CXXFLAGS: "-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
+        CC: gcc-11
+        CXX: g++-11
+        CARGO_NET_GIT_FETCH_WITH_CLI: "true"
       run: |
         cargo build --release --target ${{ matrix.target }}
 

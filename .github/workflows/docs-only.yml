@@ -1,0 +1,19 @@
+name: Documentation Check
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '**.md'
+      - '!README.md'  # README changes might warrant a build
+
+jobs:
+  docs-changed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Documentation Updated
+        run: |
+          echo "Documentation changes detected - no build required"
+          echo "To create a release, push a tag manually"

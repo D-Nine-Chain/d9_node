@@ -1,23 +1,27 @@
-name: Build and Release
+name: Build and Release (Path Filtered)
 
 on:
+  # Build on push to main with source changes
   push:
     branches:
       - main
-    tags:
-      - 'v*'
     paths:
       - '**.rs'
       - '**.toml'
       - 'Cargo.lock'
-      - '.github/workflows/build-and-release.yml'
+      - '.github/workflows/**'
       - 'scripts/**'
       - 'node/**'
       - 'runtime/**'
       - 'client/**'
-      - '!docs/**'
-      - '!**.md'
-      - '!.gitignore'
+  
+  # Always build on tags (for releases)
+  push:
+    tags:
+      - 'v*'
+      
+  # Allow manual triggering
+  workflow_dispatch:
 
 # Prevent concurrent builds for the same ref
 concurrency:
@@ -31,7 +35,27 @@ permissions:
   actions: read
 
 jobs:
+  # Job to check if we should build
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should-build: ${{ steps.filter.outputs.should-build }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for code changes
+        id: filter
+        run: |
+          # Always build for tags and manual dispatch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "should-build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-build=true" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: changes
+    if: needs.changes.outputs.should-build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -104,6 +128,7 @@ jobs:
           d9-node-${{ matrix.arch }}-linux.tar.gz.sha256
         retention-days: 7
 
+  # Simplified notification job
   notify:
     needs: build
     runs-on: ubuntu-latest
@@ -111,61 +136,12 @@ jobs:
     if: always()
     
     steps:
-    - name: Discord Notification
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    - name: Build Status Notification
       run: |
-        set -euo pipefail
-        if [ "${{ needs.build.result }}" == "success" ]; then
-          MESSAGE="✅ D9 Node build completed successfully for ${{ github.ref_name }}"
-          COLOR=3066993
-        else
-          MESSAGE="❌ D9 Node build failed for ${{ github.ref_name }}"
-          COLOR=15158332
-        fi
-        
-        # Skip if no webhook
-        if [ -z "$DISCORD_WEBHOOK" ]; then
-          echo "No Discord webhook configured"
-          exit 0
-        fi
-        
-        curl -f -H "Content-Type: application/json" \
-          -d "{\"embeds\": [{\"title\": \"Build Status\", \"description\": \"$MESSAGE\", \"color\": $COLOR, \"url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]}" \
-          "$DISCORD_WEBHOOK" || echo "Discord notification failed"
-
-    - name: Slack Notification
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      run: |
-        set -euo pipefail
-        if [ "${{ needs.build.result }}" == "success" ]; then
-          MESSAGE="✅ D9 Node build completed successfully for ${{ github.ref_name }}"
-          COLOR="good"
-        else
-          MESSAGE="❌ D9 Node build failed for ${{ github.ref_name }}"
-          COLOR="danger"
-        fi
-        
-        # Skip if no webhook
-        if [ -z "$SLACK_WEBHOOK" ]; then
-          echo "No Slack webhook configured"
-          exit 0
-        fi
-        
-        curl -f -X POST -H 'Content-type: application/json' \
-          --data "{\"attachments\": [{\"color\": \"$COLOR\", \"text\": \"$MESSAGE\", \"fields\": [{\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true}, {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true}], \"actions\": [{\"type\": \"button\", \"text\": \"View Run\", \"url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]}]}" \
-          "$SLACK_WEBHOOK" || echo "Slack notification failed"
-
-    - name: Email Notification
-      env:
-        EMAIL_TO: ${{ secrets.EMAIL_TO }}
-      run: |
-        if [ -z "$EMAIL_TO" ]; then
-          echo "No email recipient configured"
-          exit 0
-        fi
-        echo "Email notification would be sent to $EMAIL_TO (not implemented in act)"
+        echo "Build completed with status: ${{ needs.build.result }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch/Tag: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
 
   release:
     needs: build

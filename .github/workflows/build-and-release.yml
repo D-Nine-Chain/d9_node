@@ -89,11 +89,20 @@ jobs:
         CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
         AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
         CARGO_TARGET_DIR: target
-        CXXFLAGS: "-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
-        CC: gcc-11
-        CXX: g++-11
         CARGO_NET_GIT_FETCH_WITH_CLI: "true"
       run: |
+        # Set up environment based on target architecture
+        if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
+          export CC=aarch64-linux-gnu-gcc
+          export CXX=aarch64-linux-gnu-g++
+          export AR=aarch64-linux-gnu-ar
+          export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu
+          export C_INCLUDE_PATH=/usr/include/aarch64-linux-gnu
+        else
+          export CC=gcc-11
+          export CXX=g++-11
+          export CXXFLAGS="-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
+        fi
         cargo build --release --target ${{ matrix.target }}
 
     - name: Package binary and create checksums

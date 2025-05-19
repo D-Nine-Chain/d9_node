@@ -1,223 +1,196 @@
-# D9 node
+# D9 Chain Node 🔗⛓️
 
-a node permits one to to connect to the D9 network.
+<div align="center">
 
-to learn how to do staking click [here](./docs/staking.md)
+![D9 Chain Logo](https://github.com/D-Nine-Chain/resources/blob/main/d9-logo.png?raw=true)
 
-the D9 network is built using [substrate](https://substrate.io).
+[![Release](https://img.shields.io/github/v/release/D-Nine-Chain/d9_node)](https://github.com/D-Nine-Chain/d9_node/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build Status](https://github.com/D-Nine-Chain/d9_node/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/D-Nine-Chain/d9_node/actions)
+[![Rust Version](https://img.shields.io/badge/rust-1.75.0-orange.svg)](https://www.rust-lang.org/)
+[![Substrate](https://img.shields.io/badge/substrate-polkadot--sdk-brightgreen)](https://substrate.io)
 
-<br>
-<br>
-<br>
+**The Future of Decentralized Community Governance**
 
-## Getting Started
+[Documentation](./docs) | [Website](https://d9.network) | [Twitter](https://twitter.com/d9chain) | [Discord](https://discord.gg/d9chain)
 
-<br>
+</div>
 
-### Prepare rust
+## Table of Contents
 
-`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- [About D9 Chain](#about-d9-chain)
+  - [Key Features](#key-features)
+  - [D9 Custom Pallets](#d9-custom-pallets)
+- [Installation](#installation)
+  - [Quick Install](#quick-install)
+  - [Build from Source](#build-from-source)
+- [Running a Node](#running-a-node)
+  - [Development Chain](#development-chain)
+  - [Mainnet Node](#mainnet-node)
+  - [Validator Node](#validator-node)
+- [Architecture](#architecture)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Support](#support)
 
-configure rust toolchain to default to the latest stable version:
+## About D9 Chain
 
-```shell
+D9 Chain is a next-generation blockchain platform built with [Substrate](https://substrate.io) that revolutionizes community governance through innovative economic mechanisms and social coordination tools. By combining cutting-edge blockchain technology with human-centric design, D9 Chain enables communities to organize, collaborate, and thrive in the decentralized economy.
+
+### Key Features
+
+🏛️ **Community Governance** - Democratic decision-making with the D9 Council system  
+💰 **Treasury Management** - Transparent fund allocation for community projects  
+🔗 **Referral Network** - Built-in social graph tracking and rewards  
+🗳️ **Node Voting** - Decentralized validator selection and rewards  
+🔐 **Multi-Signature Support** - Secure shared control of assets  
+
+
+### D9 Custom Pallets
+
+D9 Chain features several custom pallets that provide unique functionality:
+
+| Pallet | Description |
+|--------|-------------|
+| `pallet_d9_balances` | Enhanced balance management with referral support |
+| `pallet_d9_referral` | Manages referral relationships and social graphs |
+| `pallet_d9_treasury` | Community-controlled treasury with proposal system |
+| `pallet_d9_node_voting` | Validator selection through community voting |
+| `pallet_d9_node_rewards` | Distributes rewards to validators and voters |
+| `pallet_d9_council_lock` | Manages council membership and voting |
+| `pallet_d9_multi_sig` | Multi-signature wallet functionality |
+
+[Learn more about our pallets →](./docs/pallets)
+
+## Installation
+
+### Quick Install
+
+For Ubuntu 22.04 users, use our automated installation script:
+
+```bash
+curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh | bash
+```
+
+This script will:
+- Check system requirements
+- Download the latest pre-built binary
+- Configure the node as a systemd service
+- Set up validator keys (optional)
+- Start the node automatically
+
+### Build from Source
+
+#### Prerequisites
+
+- Ubuntu 22.04 (recommended)
+- At least 60GB free disk space
+- 8GB RAM minimum
+- Rust 1.75.0 exactly
+
+#### Easy Build
+
+Use our build script for automated compilation:
+
+```bash
+curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/build-node.sh | bash
+```
+
+#### Manual Build
+
+1. **Install Rust**
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup default stable
-```
-
-```shell
 rustup update
-```
-
-```shell
 rustup target add wasm32-unknown-unknown
 ```
 
-Add the nightly release and the nightly WebAssembly (wasm) targets to your development:
-
-```shell
-rustup update nightly
+2. **Install Dependencies**
+```bash
+sudo apt update
+sudo apt install build-essential git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
 ```
 
-```shell
-rustup target add wasm32-unknown-unknown --toolchain nightly
-```
-
-<br /><br /><br />
-
-### Build a node
-
-first clone this repo:
-
-```shell
+3. **Clone and Build**
+```bash
 git clone https://github.com/D-Nine-Chain/d9_node.git
-```
-```
-sudo apt-get update
-```
-```
-sudo apt install build-essential
-```
-```
-sudo apt  install protobuf-compiler
-```
-```
-sudo apt-get install clang
-```
-then build:
-
-```sh
+cd d9_node
 cargo build --release
 ```
 
-### Embedded Docs
+## Running a Node
 
-After you build the project, you can use the following command to explore its parameters and subcommands:
+### Development Chain
 
-```sh
-./target/release/d9_node -h
+Start a single-node development chain:
+
+```bash
+./target/release/d9-node --dev
 ```
 
-### Single-Node Development Chain
+### Mainnet Node
 
-The following command starts a single-node development chain that doesn't persist state:
+Run a full node connected to the D9 mainnet:
 
-```sh
-./target/release/d9_node --dev
+```bash
+./target/release/d9-node \
+  --base-path /home/ubuntu/node-data \
+  --chain ./new-main-spec.json \
+  --name "MyD9Node" \
+  --port 30333 \
+  --rpc-port 9944 \
+  --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
 ```
 
-To purge the development chain's state, run the following command:
+### Validator Node
 
-```sh
-./target/release/d9_node purge-chain --dev
-```
+To run a validator node, you'll need to:
 
-To start the development chain with detailed logging, run the following command:
+1. Set up your node with validator keys
+2. Bond D9 tokens
+3. Set session keys
+4. Validate
 
-```sh
-RUST_BACKTRACE=1 ./target/release/d9_node -ldebug --dev
-```
+[Detailed validator guide →](./docs/running-as-a-validator.md)
 
-Development chains:
+## Architecture
 
-- Maintain state in a `tmp` folder while the node is running.
-- Use the **Alice** and **Bob** accounts as default validator authorities.
-- Use the **Alice** account as the default `sudo` account.
-- Are preconfigured with a genesis state (`/node/src/chain_spec.rs`) that includes several prefunded development accounts.
+D9 Chain is built using the Substrate framework and consists of:
 
-To persist chain state between runs, specify a base path by running a command similar to the following:
+- **Runtime**: Core blockchain logic including custom pallets
+- **Node**: Network layer handling peer connections and consensus
+- **RPC**: APIs for interacting with the blockchain
 
-```sh
-// Create a folder to use as the db base path
-$ mkdir my-chain-state
+[Architecture documentation →](./docs/architecture)
 
-// Use of that folder to store the chain state
-$ ./target/release/d9_node --dev --base-path ./my-chain-state/
+## Documentation
 
-// Check the folder structure created inside the base path after running the chain
-$ ls ./my-chain-state
-chains
-$ ls ./my-chain-state/chains/
-dev
-$ ls ./my-chain-state/chains/dev
-db keystore network
-```
+- [Building a Node](./docs/building-a-node.md)
+- [Running as a Validator](./docs/running-as-a-validator.md)
+- [Staking Guide](./docs/staking.md)
+- [Runtime Upgrades](./docs/runtime-upgrade.md)
+- [Custom Pallets](./docs/pallets)
+- [RPC Extensions](./docs/extending_rpc.md)
 
-### Connect with Polkadot-JS Apps Front-End
+## Contributing
 
-After you start the node template locally, you can interact with it using the hosted version of the [Polkadot/Substrate Portal](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) front-end by connecting to the local node endpoint.
-A hosted version is also available on [IPFS (redirect) here](https://dotapps.io/) or [IPNS (direct) here](ipns://dotapps.io/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer).
-You can also find the source code and instructions for hosting your own instance on the [polkadot-js/apps](https://github.com/polkadot-js/apps) repository.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Multi-Node Local Testnet
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-If you want to see the multi-node consensus algorithm in action, see [Simulate a network](https://docs.substrate.io/tutorials/get-started/simulate-network/).
+## Support
 
-## Node Structure
 
-A Substrate project such as this consists of a number of components that are spread across a few directories.
+- 📚 [Documentation](./docs)
+- 🐛 [Issue Tracker](https://github.com/D-Nine-Chain/d9_node/issues)
 
-### Node
+---
 
-A blockchain node is an application that allows users to participate in a blockchain network.
-Substrate-based blockchain nodes expose a number of capabilities:
-
-- Networking: Substrate nodes use the [`libp2p`](https://libp2p.io/) networking stack to allow the
-  nodes in the network to communicate with one another.
-- Consensus: Blockchains must have a way to come to [consensus](https://docs.substrate.io/fundamentals/consensus/) on the state of the network.
-  Substrate makes it possible to supply custom consensus engines and also ships with several consensus mechanisms that have been built on top of [Web3 Foundation research](https://research.web3.foundation/en/latest/polkadot/NPoS/index.html).
-- RPC Server: A remote procedure call (RPC) server is used to interact with Substrate nodes.
-
-There are several files in the `node` directory.
-Take special note of the following:
-
-- [`chain_spec.rs`](./node/src/chain_spec.rs): A [chain specification](https://docs.substrate.io/build/chain-spec/) is a source code file that defines a Substrate chain's initial (genesis) state.
-  Chain specifications are useful for development and testing, and critical when architecting the launch of a production chain.
-  Take note of the `development_config` and `testnet_genesis` functions.
-  These functions are used to define the genesis state for the local development chain configuration.
-  These functions identify some [well-known accounts](https://docs.substrate.io/reference/command-line-tools/subkey/) and use them to configure the blockchain's initial state.
-- [`service.rs`](./node/src/service.rs): This file defines the node implementation.
-  Take note of the libraries that this file imports and the names of the functions it invokes.
-  In particular, there are references to consensus-related topics, such as the [block finalization and forks](https://docs.substrate.io/fundamentals/consensus/#finalization-and-forks) and other [consensus mechanisms](https://docs.substrate.io/fundamentals/consensus/#default-consensus-models) such as Aura for block authoring and GRANDPA for finality.
-
-### Runtime
-
-In Substrate, the terms "runtime" and "state transition function" are analogous.
-Both terms refer to the core logic of the blockchain that is responsible for validating blocks and executing the state changes they define.
-The Substrate project in this repository uses [FRAME](https://docs.substrate.io/fundamentals/runtime-development/#frame) to construct a blockchain runtime.
-FRAME allows runtime developers to declare domain-specific logic in modules called "pallets".
-At the heart of FRAME is a helpful [macro language](https://docs.substrate.io/reference/frame-macros/) that makes it easy to create pallets and flexibly compose them to create blockchains that can address [a variety of needs](https://substrate.io/ecosystem/projects/).
-
-Review the [FRAME runtime implementation](./runtime/src/lib.rs) included in this template and note the following:
-
-- This file configures several pallets to include in the runtime.
-  Each pallet configuration is defined by a code block that begins with `impl $PALLET_NAME::Config for Runtime`.
-- The pallets are composed into a single runtime by way of the [`construct_runtime!`](https://crates.parity.io/frame_support/macro.construct_runtime.html) macro, which is part of the core FRAME Support [system](https://docs.substrate.io/reference/frame-pallets/#system-pallets) library.
-
-### Pallets
-
-The runtime in this project is constructed using many FRAME pallets that ship with the [core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a template pallet that is [defined in the `pallets`](./pallets/template/src/lib.rs) directory.
-
-A FRAME pallet is compromised of a number of blockchain primitives:
-
-- Storage: FRAME defines a rich set of powerful [storage abstractions](https://docs.substrate.io/build/runtime-storage/) that makes it easy to use Substrate's efficient key-value database to manage the evolving state of a blockchain.
-- Dispatchables: FRAME pallets define special types of functions that can be invoked (dispatched) from outside of the runtime in order to update its state.
-- Events: Substrate uses [events and errors](https://docs.substrate.io/build/events-and-errors/) to notify users of important changes in the runtime.
-- Errors: When a dispatchable fails, it returns an error.
-- Config: The `Config` configuration interface is used to define the types and parameters upon which a FRAME pallet depends.
-
-## Alternative Installations
-
-Instead of installing dependencies and building this source directly, consider the following alternatives.
-
-### CI
-
-#### Binary
-
-Check the [CI release workflow](./.github/workflows/release.yml) to see how the binary is built on CI.
-You can modify the compilation targets depending on your needs.
-
-Allow GitHub actions in your forked repository to build the binary for you.
-
-Push a tag. For example, `v0.1.1`. Based on [Semantic Versioning](https://semver.org/), the supported tag format is `v?MAJOR.MINOR.PATCH(-PRERELEASE)?(+BUILD_METADATA)?` (the leading "v", pre-release version, and build metadata are optional and the optional prefix is also supported).
-
-After the pipeline is finished, you can download the binary from the releases page.
-
-#### Container
-
-Check the [CI release workflow](./.github/workflows/release.yml) to see how the Docker image is built on CI.
-
-Add your `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets or other organization settings to your forked repository.
-Change the `DOCKER_REPO` variable in the workflow to `[your DockerHub registry name]/[image name]`.
-
-Push a tag.
-
-After the image is built and pushed, you can pull it with `docker pull <DOCKER_REPO>:<tag>`.
-
-### Nix
-
-Install [nix](https://nixos.org/), and optionally [direnv](https://github.com/direnv/direnv) and [lorri](https://github.com/nix-community/lorri) for a fully plug-and-play experience for setting up the development environment.
-To get all the correct dependencies, activate direnv `direnv allow` and lorri `lorri shell`.
-
-### Docker
-
-Please follow the [Substrate Docker instructions here](https://github.com/paritytech/substrate/blob/master/docker/README.md) to build the Docker container with the D9 node binary.
+<div align="center">
+Built with ❤️ by the D9 Community
+</div>

@@ -1,0 +1,192 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+# Prevent concurrent builds for the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Explicitly declare permissions
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            arch: x86_64
+          - target: aarch64-unknown-linux-gnu
+            arch: aarch64
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@1.75.0
+      with:
+        targets: ${{ matrix.target }}
+        components: rust-src
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ matrix.target }}-
+          ${{ runner.os }}-cargo-
+
+    - name: Install cross-compilation tools
+      if: matrix.arch == 'aarch64'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libclang-dev pkg-config protobuf-compiler
+
+    - name: Build
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+        AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
+        CARGO_TARGET_DIR: target
+      run: |
+        cargo build --release --target ${{ matrix.target }}
+
+    - name: Package binary and create checksums
+      run: |
+        cd target/${{ matrix.target }}/release
+        tar -czf d9-node-${{ matrix.arch }}-linux.tar.gz d9-node
+        sha256sum d9-node-${{ matrix.arch }}-linux.tar.gz > d9-node-${{ matrix.arch }}-linux.tar.gz.sha256
+        mv d9-node-${{ matrix.arch }}-linux.tar.gz* ../../../
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: d9-node-${{ matrix.arch }}-linux
+        path: |
+          d9-node-${{ matrix.arch }}-linux.tar.gz
+          d9-node-${{ matrix.arch }}-linux.tar.gz.sha256
+        retention-days: 7
+
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+    
+    steps:
+    - name: Discord Notification
+      if: env.DISCORD_WEBHOOK != '' && secrets.DISCORD_WEBHOOK != ''
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      run: |
+        set -euo pipefail
+        if [ "${{ needs.build.result }}" == "success" ]; then
+          MESSAGE="✅ D9 Node build completed successfully for ${{ github.ref_name }}"
+          COLOR=3066993
+        else
+          MESSAGE="❌ D9 Node build failed for ${{ github.ref_name }}"
+          COLOR=15158332
+        fi
+        
+        # Validate webhook URL format
+        if [[ ! "$DISCORD_WEBHOOK" =~ ^https://discord\.com/api/webhooks/ ]]; then
+          echo "Invalid Discord webhook URL"
+          exit 1
+        fi
+        
+        curl -f -H "Content-Type: application/json" \
+          -d "{\"embeds\": [{\"title\": \"Build Status\", \"description\": \"$MESSAGE\", \"color\": $COLOR, \"url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]}" \
+          "$DISCORD_WEBHOOK" || echo "Discord notification failed"
+
+    - name: Slack Notification
+      if: env.SLACK_WEBHOOK != '' && secrets.SLACK_WEBHOOK != ''
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      run: |
+        set -euo pipefail
+        if [ "${{ needs.build.result }}" == "success" ]; then
+          MESSAGE="✅ D9 Node build completed successfully for ${{ github.ref_name }}"
+          COLOR="good"
+        else
+          MESSAGE="❌ D9 Node build failed for ${{ github.ref_name }}"
+          COLOR="danger"
+        fi
+        
+        # Validate webhook URL format
+        if [[ ! "$SLACK_WEBHOOK" =~ ^https://hooks\.slack\.com/ ]]; then
+          echo "Invalid Slack webhook URL"
+          exit 1
+        fi
+        
+        curl -f -X POST -H 'Content-type: application/json' \
+          --data "{\"attachments\": [{\"color\": \"$COLOR\", \"text\": \"$MESSAGE\", \"fields\": [{\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true}, {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true}], \"actions\": [{\"type\": \"button\", \"text\": \"View Run\", \"url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]}]}" \
+          "$SLACK_WEBHOOK" || echo "Slack notification failed"
+
+    - name: Email Notification
+      if: secrets.EMAIL_TO != ''
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.EMAIL_SERVER }}
+        server_port: ${{ secrets.EMAIL_PORT }}
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: D9 Node Build ${{ needs.build.result }} - ${{ github.ref_name }}
+        to: ${{ secrets.EMAIL_TO }}
+        from: ${{ secrets.EMAIL_FROM }}
+        body: |
+          Build Status: ${{ needs.build.result }}
+          Repository: ${{ github.repository }}
+          Branch/Tag: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          
+          View the run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Validate version tag
+      run: |
+        if ! [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+          echo "Invalid version tag format. Expected: v1.2.3 or v1.2.3-beta.1"
+          exit 1
+        fi
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+        generate_release_notes: true
+        files: |
+          d9-node-x86_64-linux/d9-node-x86_64-linux.tar.gz
+          d9-node-x86_64-linux/d9-node-x86_64-linux.tar.gz.sha256
+          d9-node-aarch64-linux/d9-node-aarch64-linux.tar.gz
+          d9-node-aarch64-linux/d9-node-aarch64-linux.tar.gz.sha256
+      env:
+        GITHUB_TOKEN: ${{ github.token }}

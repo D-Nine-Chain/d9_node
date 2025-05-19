@@ -90,10 +90,9 @@ jobs:
           export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
           export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
           export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
-          export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu
-          export C_INCLUDE_PATH=/usr/include/aarch64-linux-gnu
           export CARGO_TARGET_DIR=target
           export CARGO_NET_GIT_FETCH_WITH_CLI=true
+          # Don't set include paths for cross-compilation - let the cross-compiler handle it
         else
           export CC_x86_64_unknown_linux_gnu=gcc-11
           export CXX_x86_64_unknown_linux_gnu=g++-11

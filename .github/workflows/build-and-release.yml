@@ -96,7 +96,7 @@ jobs:
     
     steps:
     - name: Discord Notification
-      if: env.DISCORD_WEBHOOK != '' && secrets.DISCORD_WEBHOOK != ''
+      if: ${{ secrets.DISCORD_WEBHOOK != '' }}
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       run: |
@@ -120,7 +120,7 @@ jobs:
           "$DISCORD_WEBHOOK" || echo "Discord notification failed"
 
     - name: Slack Notification
-      if: env.SLACK_WEBHOOK != '' && secrets.SLACK_WEBHOOK != ''
+      if: ${{ secrets.SLACK_WEBHOOK != '' }}
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       run: |

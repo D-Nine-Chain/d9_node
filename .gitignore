@@ -17,3 +17,8 @@
 **/*_state
 
 **/.claude/settings.local.json
+
+# Act testing files
+.secrets.act
+.env.act
+event.json

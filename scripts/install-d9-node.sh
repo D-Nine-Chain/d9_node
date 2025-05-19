@@ -31,6 +31,8 @@ if [ "$lang_choice" = "2" ]; then
     MSG_DOWNLOADING_NODE="正在下载 D9 节点..."
     MSG_INSTALLING_NODE="正在安装节点..."
     MSG_SETTING_UP_SERVICE="正在设置系统服务..."
+    MSG_NODE_NAME_PROMPT="请为您的节点取一个名字："
+    MSG_NODE_NAME_INFO="提示：此名字仅对其他节点可见，不会对最终用户显示"
     MSG_CHECKING_KEYS="正在检查现有密钥..."
     MSG_FOUND_KEYS="找到密钥文件："
     MSG_NO_KEYS_FOUND="未找到密钥文件"
@@ -60,6 +62,8 @@ else
     MSG_DOWNLOADING_NODE="Downloading D9 node..."
     MSG_INSTALLING_NODE="Installing node..."
     MSG_SETTING_UP_SERVICE="Setting up system service..."
+    MSG_NODE_NAME_PROMPT="Please choose a name for your node:"
+    MSG_NODE_NAME_INFO="Note: This name is only visible to other nodes, not to end users"
     MSG_CHECKING_KEYS="Checking for existing keys..."
     MSG_FOUND_KEYS="Found key files:"
     MSG_NO_KEYS_FOUND="No keys found"
@@ -200,7 +204,15 @@ sudo mv /tmp/new-main-spec.json /usr/local/bin/
 # Set up systemd service
 echo ""
 echo -e "${YELLOW}$MSG_SETTING_UP_SERVICE${NC}"
-cat << 'EOF' | sudo tee /etc/systemd/system/d9-node.service > /dev/null
+
+# Ask for node name
+echo ""
+echo -e "${BLUE}$MSG_NODE_NAME_INFO${NC}"
+echo -e "${YELLOW}$MSG_NODE_NAME_PROMPT${NC}"
+read -p "> " NODE_NAME
+
+# Create the service file with the user's node name
+cat << EOF | sudo tee /etc/systemd/system/d9-node.service > /dev/null
 [Unit]
 Description=D9 Node
 After=network.target
@@ -208,10 +220,10 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-ExecStart=/usr/local/bin/d9-node \
-  --base-path /home/ubuntu/node-data \
-  --chain /usr/local/bin/new-main-spec.json \
-  --name MY_NODE_NAME \
+ExecStart=/usr/local/bin/d9-node \\
+  --base-path /home/ubuntu/node-data \\
+  --chain /usr/local/bin/new-main-spec.json \\
+  --name "$NODE_NAME" \\
   --validator
 
 Restart=on-failure

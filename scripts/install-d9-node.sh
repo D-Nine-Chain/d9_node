@@ -111,7 +111,7 @@ echo -e "${GREEN}✓ Ubuntu 22.04${NC}"
 
 # Check architecture
 ARCH=$(uname -m)
-if [[ "$ARCH" != "x86_64" ]] && [[ "$ARCH" != "aarch64" ]] && [[ "$ARCH" != "arm64" ]]; then
+if [[ "$ARCH" != "x86_64" ]]; then
     explain_error "$MSG_ERROR_NOT_64BIT"
     exit 1
 fi
@@ -158,12 +158,8 @@ echo -e "${YELLOW}Installing dependencies...${NC}"
 sudo apt update -qq
 sudo apt install -y -qq curl jq
 
-# Determine architecture for download
-if [[ "$ARCH" == "x86_64" ]]; then
-    DOWNLOAD_ARCH="x86_64"
-elif [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
-    DOWNLOAD_ARCH="aarch64"
-fi
+# Architecture is x86_64 only
+DOWNLOAD_ARCH="x86_64"
 
 # Get latest release URL
 echo ""

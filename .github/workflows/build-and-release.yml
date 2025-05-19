@@ -40,8 +40,6 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             arch: x86_64
-          - target: aarch64-unknown-linux-gnu
-            arch: aarch64
 
     steps:
     - uses: actions/checkout@v4
@@ -77,32 +75,18 @@ jobs:
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
 
-    - name: Install cross-compilation tools
-      if: matrix.arch == 'aarch64'
-      run: |
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     - name: Build
       run: |
-        # Set up environment based on target architecture
-        if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
-          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-          export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-          export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
-          export CARGO_TARGET_DIR=target
-          export CARGO_NET_GIT_FETCH_WITH_CLI=true
-          # Don't set include paths for cross-compilation - let the cross-compiler handle it
-        else
-          export CC_x86_64_unknown_linux_gnu=gcc-11
-          export CXX_x86_64_unknown_linux_gnu=g++-11
-          export AR_x86_64_unknown_linux_gnu=ar
-          export CXXFLAGS="-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
-          export CC=gcc-11
-          export CXX=g++-11
-          export CARGO_TARGET_DIR=target
-          export CARGO_NET_GIT_FETCH_WITH_CLI=true
-        fi
+        # Set up environment for x86_64
+        export CC_x86_64_unknown_linux_gnu=gcc-11
+        export CXX_x86_64_unknown_linux_gnu=g++-11
+        export AR_x86_64_unknown_linux_gnu=ar
+        export CXXFLAGS="-std=c++17 -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11"
+        export CC=gcc-11
+        export CXX=g++-11
+        export CARGO_TARGET_DIR=target
+        export CARGO_NET_GIT_FETCH_WITH_CLI=true
         cargo build --release --target ${{ matrix.target }}
 
     - name: Package binary and create checksums
@@ -208,7 +192,5 @@ jobs:
         files: |
           d9-node-x86_64-linux/d9-node-x86_64-linux.tar.gz
           d9-node-x86_64-linux/d9-node-x86_64-linux.tar.gz.sha256
-          d9-node-aarch64-linux/d9-node-aarch64-linux.tar.gz
-          d9-node-aarch64-linux/d9-node-aarch64-linux.tar.gz.sha256
       env:
         GITHUB_TOKEN: ${{ github.token }}

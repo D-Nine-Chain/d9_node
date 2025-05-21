@@ -25,10 +25,14 @@ if [ "$lang_choice" = "2" ]; then
     # Chinese messages
     MSG_CHECKING_SYSTEM="正在检查系统要求..."
     MSG_ERROR_NOT_UBUNTU="错误：此脚本仅支持 Ubuntu 22.04。请确保您使用的是 Ubuntu 22.04 系统。"
-    MSG_ERROR_NOT_64BIT="错误：此脚本不支持 32 位系统。请使用 64 位系统。"
+    MSG_ERROR_NOT_64BIT="错误：此脚本只支持 x86_64 架构。ARM64/aarch64 用户请使用源代码构建脚本。"
     MSG_ERROR_DISK_SPACE="错误：您需要至少 60GB 的可用磁盘空间。请清理一些空间后重试。"
     MSG_SWAP_CONFIG="正在配置交换文件..."
     MSG_DOWNLOADING_NODE="正在下载 D9 节点..."
+    MSG_DOWNLOADING_HASH="正在下载哈希文件..."
+    MSG_VERIFYING_INTEGRITY="正在验证文件完整性..."
+    MSG_INTEGRITY_OK="文件完整性验证通过"
+    MSG_INTEGRITY_FAILED="文件完整性验证失败"
     MSG_INSTALLING_NODE="正在安装节点..."
     MSG_SETTING_UP_SERVICE="正在设置系统服务..."
     MSG_NODE_NAME_PROMPT="请为您的节点取一个名字："
@@ -52,14 +56,25 @@ if [ "$lang_choice" = "2" ]; then
     MSG_NEED_SPACE="需要至少 60GB"
     MSG_DOWNLOAD_ERROR="下载失败。请检查网络连接并重试。"
     MSG_VERSION_CHECK="正在检查最新版本..."
+    MSG_CHECKING_GLIBC="正在检查 GLIBC 版本..."
+    MSG_GLIBC_VERSION="当前 GLIBC 版本："
+    MSG_GLIBC_REQUIRED="需要 GLIBC 版本：2.38 或更高"
+    MSG_GLIBC_INCOMPATIBLE="GLIBC 版本不兼容"
+    MSG_GLIBC_UPGRADING="正在尝试升级 GLIBC..."
+    MSG_GLIBC_SUCCESS="GLIBC 成功升级到兼容版本"
+    MSG_USE_BUILD_SCRIPT="请使用源代码构建脚本："
 else
     # English messages
     MSG_CHECKING_SYSTEM="Checking system requirements..."
     MSG_ERROR_NOT_UBUNTU="Error: This script only supports Ubuntu 22.04. Please make sure you're using Ubuntu 22.04."
-    MSG_ERROR_NOT_64BIT="Error: This script does not support 32-bit systems. Please use a 64-bit system."
+    MSG_ERROR_NOT_64BIT="Error: This script only supports x86_64 architecture. ARM64/aarch64 users please use the build from source script."
     MSG_ERROR_DISK_SPACE="Error: You need at least 60GB of free disk space. Please free up some space and try again."
     MSG_SWAP_CONFIG="Configuring swap file..."
     MSG_DOWNLOADING_NODE="Downloading D9 node..."
+    MSG_DOWNLOADING_HASH="Downloading hash file..."
+    MSG_VERIFYING_INTEGRITY="Verifying file integrity..."
+    MSG_INTEGRITY_OK="File integrity verified"
+    MSG_INTEGRITY_FAILED="File integrity verification failed"
     MSG_INSTALLING_NODE="Installing node..."
     MSG_SETTING_UP_SERVICE="Setting up system service..."
     MSG_NODE_NAME_PROMPT="Please choose a name for your node:"
@@ -83,6 +98,13 @@ else
     MSG_NEED_SPACE="Need at least 60GB"
     MSG_DOWNLOAD_ERROR="Download failed. Please check your internet connection and try again."
     MSG_VERSION_CHECK="Checking for latest version..."
+    MSG_CHECKING_GLIBC="Checking GLIBC version..."
+    MSG_GLIBC_VERSION="Current GLIBC version:"
+    MSG_GLIBC_REQUIRED="Required GLIBC version: 2.38 or higher"
+    MSG_GLIBC_INCOMPATIBLE="GLIBC version is incompatible"
+    MSG_GLIBC_UPGRADING="Attempting to upgrade GLIBC..."
+    MSG_GLIBC_SUCCESS="GLIBC successfully upgraded to a compatible version"
+    MSG_USE_BUILD_SCRIPT="Please use the build from source script:"
 fi
 
 # Function to explain errors clearly
@@ -115,8 +137,10 @@ echo -e "${GREEN}✓ Ubuntu 22.04${NC}"
 
 # Check architecture
 ARCH=$(uname -m)
-if [[ "$ARCH" != "x86_64" ]]; then
+if [ "$ARCH" != "x86_64" ]; then
     explain_error "$MSG_ERROR_NOT_64BIT"
+    echo -e "${YELLOW}$MSG_USE_BUILD_SCRIPT${NC}"
+    echo -e "curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/build-node.sh | bash"
     exit 1
 fi
 
@@ -162,18 +186,91 @@ echo -e "${YELLOW}Installing dependencies...${NC}"
 sudo apt update -qq
 sudo apt install -y -qq curl jq
 
-# Architecture is x86_64 only
-DOWNLOAD_ARCH="x86_64"
+# Check GLIBC version
+echo ""
+echo -e "${YELLOW}$MSG_CHECKING_GLIBC${NC}"
+# Extract the last version number from the output (the one after the parentheses)
+GLIBC_VERSION=$(ldd --version | head -n1 | grep -oE '[0-9]+\.[0-9]+$')
+GLIBC_MAJOR=$(echo $GLIBC_VERSION | cut -d. -f1)
+GLIBC_MINOR=$(echo $GLIBC_VERSION | cut -d. -f2)
+echo -e "${BLUE}$MSG_GLIBC_VERSION $GLIBC_VERSION${NC}"
+echo -e "${BLUE}$MSG_GLIBC_REQUIRED${NC}"
+
+# Make sure these are numbers before comparing
+if ! [[ "$GLIBC_MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$GLIBC_MINOR" =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}Error: Could not parse GLIBC version correctly.${NC}"
+    echo -e "${RED}Detected version string: $GLIBC_VERSION${NC}"
+    echo -e "${RED}Major: $GLIBC_MAJOR, Minor: $GLIBC_MINOR${NC}"
+    exit 1
+fi
+
+# Now do the comparison with validated numbers
+if [ "$GLIBC_MAJOR" -gt 2 ] || ([ "$GLIBC_MAJOR" -eq 2 ] && [ "$GLIBC_MINOR" -ge 38 ]); then
+    echo -e "${GREEN}✓ GLIBC is compatible${NC}"
+else
+    echo -e "${YELLOW}$MSG_GLIBC_UPGRADING${NC}"
+    
+    # Backup original sources.list
+    sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+    
+    # Add Ubuntu 24.04 repository
+    echo -e "${YELLOW}Adding Ubuntu 24.04 repository for newer glibc...${NC}"
+    sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu noble main" > /etc/apt/sources.list.d/noble.list'
+    
+    # Update package list
+    echo -e "${YELLOW}Updating package lists...${NC}"
+    sudo apt update -qq
+    
+    # Install newer glibc
+    echo -e "${YELLOW}Installing newer glibc...${NC}"
+    sudo apt install -y -qq libc6
+    
+    # Verify upgraded version
+    GLIBC_VERSION_NEW=$(ldd --version | head -n1 | grep -oE '[0-9]+\.[0-9]+$')
+    GLIBC_MAJOR_NEW=$(echo $GLIBC_VERSION_NEW | cut -d. -f1)
+    GLIBC_MINOR_NEW=$(echo $GLIBC_VERSION_NEW | cut -d. -f2)
+    
+    echo -e "${BLUE}New GLIBC version: $GLIBC_VERSION_NEW${NC}"
+    
+    # Make sure these are numbers before comparing
+    if ! [[ "$GLIBC_MAJOR_NEW" =~ ^[0-9]+$ ]] || ! [[ "$GLIBC_MINOR_NEW" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Error: Could not parse new GLIBC version correctly.${NC}"
+        echo -e "${RED}Detected version string: $GLIBC_VERSION_NEW${NC}"
+        echo -e "${RED}Major: $GLIBC_MAJOR_NEW, Minor: $GLIBC_MINOR_NEW${NC}"
+        exit 1
+    fi
+    
+    if [ "$GLIBC_MAJOR_NEW" -gt 2 ] || ([ "$GLIBC_MAJOR_NEW" -eq 2 ] && [ "$GLIBC_MINOR_NEW" -ge 38 ]); then
+        echo -e "${GREEN}✓ $MSG_GLIBC_SUCCESS${NC}"
+    else
+        echo -e "${RED}✗ $MSG_GLIBC_INCOMPATIBLE${NC}"
+        echo -e "${YELLOW}$MSG_USE_BUILD_SCRIPT${NC}"
+        echo -e "curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/build-node.sh | bash"
+        
+        # Restore original sources.list
+        sudo rm /etc/apt/sources.list.d/noble.list
+        sudo apt update -qq
+        
+        exit 1
+    fi
+fi
 
 # Get latest release URL
 echo ""
 echo -e "${YELLOW}$MSG_VERSION_CHECK${NC}"
-LATEST_RELEASE_URL="https://api.github.com/repos/D-Nine-Chain/d9_node/releases/latest"
-DOWNLOAD_URL=$(curl -s $LATEST_RELEASE_URL | jq -r ".assets[] | select(.name | contains(\"${DOWNLOAD_ARCH}-linux\")) | .browser_download_url")
+# Get the latest release JSON and store it
+LATEST_RELEASE=$(curl -s https://api.github.com/repos/D-Nine-Chain/d9_node/releases/latest)
 
-if [ -z "$DOWNLOAD_URL" ]; then
+# Extract URLs directly from the stored JSON
+DOWNLOAD_URL=$(echo "$LATEST_RELEASE" | jq -r '.assets[] | select(.name | endswith(".tar.gz")) | .browser_download_url')
+HASH_URL=$(echo "$LATEST_RELEASE" | jq -r '.assets[] | select(.name | endswith(".sha256")) | .browser_download_url')
+
+echo "Download URL: $DOWNLOAD_URL"
+echo "Hash URL: $HASH_URL"
+
+if [ -z "$DOWNLOAD_URL" ] || [ -z "$HASH_URL" ]; then
     echo -e "${RED}$MSG_DOWNLOAD_ERROR${NC}"
-    echo "Could not find download URL for architecture: $DOWNLOAD_ARCH"
+    echo "Could not find download URLs"
     exit 1
 fi
 
@@ -186,12 +283,34 @@ wget -O d9-node.tar.gz "$DOWNLOAD_URL" || {
     exit 1
 }
 
+# Download hash file for verification
+echo -e "${YELLOW}$MSG_DOWNLOADING_HASH${NC}"
+echo "Hash URL: $HASH_URL"
+wget -O d9-node.tar.gz.sha256 "$HASH_URL" || {
+    explain_error "$MSG_DOWNLOAD_ERROR"
+    rm -f d9-node.tar.gz
+    exit 1
+}
+
+# Verify integrity
+echo -e "${YELLOW}$MSG_VERIFYING_INTEGRITY${NC}"
+EXPECTED_HASH=$(cat d9-node.tar.gz.sha256 | awk '{print $1}')
+ACTUAL_HASH=$(sha256sum d9-node.tar.gz | awk '{print $1}')
+
+if [ "$EXPECTED_HASH" = "$ACTUAL_HASH" ]; then
+    echo -e "${GREEN}✓ $MSG_INTEGRITY_OK${NC}"
+else
+    echo -e "${RED}✗ $MSG_INTEGRITY_FAILED${NC}"
+    rm -f d9-node.tar.gz d9-node.tar.gz.sha256
+    exit 1
+fi
+
 # Extract and install
 echo -e "${YELLOW}$MSG_INSTALLING_NODE${NC}"
 tar -xzf d9-node.tar.gz
 sudo mv d9-node /usr/local/bin/
 sudo chmod +x /usr/local/bin/d9-node
-rm d9-node.tar.gz
+rm d9-node.tar.gz d9-node.tar.gz.sha256
 
 # Create data directory
 sudo mkdir -p /home/ubuntu/node-data
@@ -224,6 +343,7 @@ ExecStart=/usr/local/bin/d9-node \\
   --base-path /home/ubuntu/node-data \\
   --chain /usr/local/bin/new-main-spec.json \\
   --name "$NODE_NAME" \\
+  --port 40100 \\
   --validator
 
 Restart=on-failure

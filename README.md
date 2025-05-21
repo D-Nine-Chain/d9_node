@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![D9 Chain Logo](https://github.com/D-Nine-Chain/resources/blob/main/d9-logo.png?raw=true)
+![D9 Chain Logo](https://d9network.com/images/header_logo.png)
 
 [![Release](https://img.shields.io/github/v/release/D-Nine-Chain/d9_node)](https://github.com/D-Nine-Chain/d9_node/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -21,7 +21,7 @@
 - [About D9 Chain](#about-d9-chain)
   - [Key Features](#key-features)
   - [D9 Custom Pallets](#d9-custom-pallets)
-- [Installation](#installation)
+- [Installation](#installation) ([Chinese Installation Guide / 中文安装指南](./docs/installation_zh.md))
   - [Quick Install](#quick-install)
   - [Build from Source](#build-from-source)
 - [Running a Node](#running-a-node)
@@ -69,7 +69,7 @@ D9 Chain features several custom pallets that provide unique functionality:
 For Ubuntu 22.04 users, use our automated installation script:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh | bash
+curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh -o install-d9-node.sh && chmod +x install-d9-node.sh && ./install-d9-node.sh
 ```
 
 This script will:
@@ -136,11 +136,10 @@ Run a full node connected to the D9 mainnet:
 ```bash
 ./target/release/d9-node \
   --base-path /home/ubuntu/node-data \
-  --chain ./new-main-spec.json \
+  --chain /usr/local/bin/new-main-spec.json \
   --name "MyD9Node" \
-  --port 30333 \
-  --rpc-port 9944 \
-  --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
+  --port 40100 \
+  --rpc-port 40200 \
 ```
 
 ### Validator Node

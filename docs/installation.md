@@ -2,6 +2,8 @@
 
 This guide covers multiple installation methods for the D9 node, from quick automated installation to manual compilation from source.
 
+[中文安装指南](./installation_zh.md) - Chinese Installation Guide
+
 ## System Requirements
 
 - **Operating System**: Ubuntu 22.04 LTS (recommended)
@@ -9,7 +11,7 @@ This guide covers multiple installation methods for the D9 node, from quick auto
 - **RAM**: Minimum 8GB (16GB recommended)
 - **Storage**: Minimum 60GB free space (SSD recommended)
 - **Network**: Stable internet connection
-- **Ports**: 30333 (P2P), 9944 (RPC)
+- **Ports**: 40100 (P2P), 40200 (RPC), 40300 (WebSocket)
 
 ## Quick Install (Recommended)
 
@@ -30,7 +32,7 @@ This script will:
 
 The installation script supports multiple languages:
 - English (default)
-- Chinese (中文)
+- Chinese (中文) - [Chinese installation guide](./installation_zh.md)
 
 You'll be prompted to choose your language at the start.
 

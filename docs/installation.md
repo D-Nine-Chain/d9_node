@@ -18,7 +18,7 @@ This guide covers multiple installation methods for the D9 node, from quick auto
 The fastest way to get a D9 node running is using our automated installation script:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh | bash
+curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh -o install-d9-node.sh && chmod +x install-d9-node.sh && ./install-d9-node.sh
 ```
 
 This script will:

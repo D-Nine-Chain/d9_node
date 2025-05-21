@@ -16,7 +16,7 @@
 启动D9节点最快的方法是使用我们的自动安装脚本:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh | bash
+curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh -o install-d9-node.sh && chmod +x install-d9-node.sh && ./install-d9-node.sh
 ```
 
 此脚本将会:
@@ -65,7 +65,7 @@ curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/in
 ### 使用构建脚本
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/install-d9-node.sh -o install-d9-node.sh && chmod +x install-d9-node.sh && ./install-d9-node.sh
+curl -sSf https://raw.githubusercontent.com/D-Nine-Chain/d9_node/main/scripts/build-node.sh | bash
 ```
 
 此脚本:
